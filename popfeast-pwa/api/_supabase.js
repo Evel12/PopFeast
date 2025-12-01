@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-export const MOCK_MODE = !SUPABASE_URL || !SUPABASE_SERVICE_KEY;
-export const supabase = (!MOCK_MODE) ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : null;
+// Prefer service key; fall back to anon if service not provided
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+export const MOCK_MODE = !SUPABASE_URL || !SUPABASE_KEY;
+export const supabase = (!MOCK_MODE) ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 export const mockData = {
   movies: [

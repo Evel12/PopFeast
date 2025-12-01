@@ -1,4 +1,4 @@
-const CACHE_NAME = "popfeast-cache-v3";
+const CACHE_NAME = "popfeast-cache-v4";
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -24,8 +24,9 @@ self.addEventListener("install", event => {
       ];
       await Promise.all(apiToWarm.map(async (u) => {
         try {
-          const res = await fetch(u, { cache: 'no-store' });
-          if (res && res.ok) {
+          const res = await fetch(u, { cache: 'no-store', headers: { 'Accept': 'application/json' } });
+          const ct = res.headers.get('content-type') || '';
+          if (res && res.ok && ct.includes('application/json')) {
             await cache.put(u, res.clone());
           }
         } catch {}
@@ -85,12 +86,14 @@ self.addEventListener("fetch", event => {
         const cached = await cache.match(request);
         // Kick off background refresh
         fetch(request).then(res => {
-          if (res.ok) cache.put(request, res.clone());
+          const ct = res.headers.get('content-type') || '';
+          if (res.ok && ct.includes('application/json')) cache.put(request, res.clone());
         }).catch(()=>{});
         if (cached) return cached;
         try {
           const res = await fetch(request);
-          if (res.ok) cache.put(request, res.clone());
+          const ct = res.headers.get('content-type') || '';
+          if (res.ok && ct.includes('application/json')) cache.put(request, res.clone());
           return res;
         } catch {
           return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
