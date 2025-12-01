@@ -74,6 +74,11 @@ export default function Movies() {
       rating: movie.rating,
       year: movie.year,
       duration_minutes: movie.duration_minutes
+    }).then(async () => {
+      if (!navigator.onLine) return;
+      const all = await getFavorites();
+      const set = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
+      setFavSet(set);
     }).catch(() => {
       // Offline or failure: keep optimistic state; will reconcile when back online
     }).finally(() => {
