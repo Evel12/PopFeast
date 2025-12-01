@@ -3,6 +3,7 @@ import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
 export default async function handler(req, res){
   const { id } = req.query;
   if(req.method === 'GET'){
+    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300');
     if(MOCK_MODE){ const itm = mockData.series.find(s=>s.id===id); if(!itm) return res.status(404).json({error:'Not found'}); return res.status(200).json(itm); }
     const { data, error } = await supabase.from('series').select('*').eq('id',id).single();
     if(error || !data) return res.status(404).json({error:error?.message||'Not found'});

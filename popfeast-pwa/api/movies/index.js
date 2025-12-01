@@ -2,6 +2,7 @@ import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
 
 export default async function handler(req, res){
   if(req.method === 'GET'){
+    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300');
     if(MOCK_MODE){ return res.status(200).json(mockData.movies); }
     const { data, error } = await supabase
       .from('movies')

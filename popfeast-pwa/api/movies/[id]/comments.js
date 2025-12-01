@@ -3,6 +3,7 @@ import { supabase, MOCK_MODE, mockData } from '../../_supabase.js';
 export default async function handler(req,res){
   const { id } = req.query;
   if(req.method === 'GET'){
+    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=120');
     if(MOCK_MODE){
       const list = mockData.comments.filter(c=>c.item_type==='movie' && c.item_id===id).sort((a,b)=>b.created_at.localeCompare(a.created_at));
       return res.status(200).json(list);
