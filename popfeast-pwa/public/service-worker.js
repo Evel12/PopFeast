@@ -83,13 +83,15 @@ self.addEventListener("fetch", event => {
   if (url.pathname.startsWith("/api/")) {
     event.respondWith((async () => {
       if (request.method === 'GET') {
-        // For favorites list or explicit bypass: network-first and do not serve cached
-        if (bypass || url.pathname === '/api/favorites') {
+        const isDetail = /^\/api\/(movies|series)\/[-0-9a-fA-F]+$/.test(url.pathname);
+        const isFavorites = url.pathname === '/api/favorites';
+        // Detail endpoints & favorites or explicit bypass: network-first
+        if (bypass || isDetail || isFavorites) {
           try {
             const res = await fetch(request);
             const ct = res.headers.get('content-type') || '';
-            // do not cache favorites when bypassing; keep behavior predictable
-            if (!bypass && res.ok && ct.includes('application/json')) {
+            if (isDetail && res.ok && ct.includes('application/json')) {
+              // Cache successful detail JSON for offline revisit
               const cache = await caches.open(CACHE_NAME);
               cache.put(request, res.clone());
             }

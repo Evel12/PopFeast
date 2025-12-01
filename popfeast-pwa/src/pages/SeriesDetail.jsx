@@ -44,7 +44,7 @@ export default function SeriesDetail(){
 
   useEffect(()=>{
     setCLoading(true);
-    fetch(`/xapi/series/${id}/comments`, { headers: { 'Accept': 'application/json' } })
+    fetch(`/api/series/${id}/comments?__bypass=1&_ts=${Date.now()}`, { headers: { 'Accept': 'application/json', 'x-bypass-cache':'1' }, cache:'no-store' })
       .then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); })
       .then(j=>setComments(Array.isArray(j)?j:[]))
       .catch(()=>{}).finally(()=>setCLoading(false));
@@ -54,7 +54,7 @@ export default function SeriesDetail(){
     e.preventDefault();
     if(!content.trim())return;
     setSubmitLoading(true);
-    fetch(`/xapi/series/${id}/comments`,{
+    fetch(`/api/series/${id}/comments`,{
       method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
       body:JSON.stringify({rating: (rating === '' ? null : Number(rating)), content, username: username ? username : null})
     }).then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); }).then(j=>{

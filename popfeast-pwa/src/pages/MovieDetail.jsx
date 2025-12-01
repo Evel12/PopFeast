@@ -43,7 +43,7 @@ export default function MovieDetail() {
 
   useEffect(() => {
     setCLoading(true);
-    fetch(`/xapi/movies/${id}/comments`, { headers: { 'Accept': 'application/json' } })
+    fetch(`/api/movies/${id}/comments?__bypass=1&_ts=${Date.now()}`, { headers: { 'Accept': 'application/json', 'x-bypass-cache':'1' }, cache:'no-store' })
       .then(async r => { if (!r.ok) throw new Error('net'); return r.json(); })
       .then(j => setComments(Array.isArray(j) ? j : []))
       .catch(() => {})
@@ -54,7 +54,7 @@ export default function MovieDetail() {
     e.preventDefault();
     if (!content.trim()) return;
     setSubmitLoading(true);
-    fetch(`/xapi/movies/${id}/comments`, {
+    fetch(`/api/movies/${id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({

@@ -33,17 +33,22 @@ export default function Layout() {
 
           {(inMovies || inSeries) && (
             <form onSubmit={e=>e.preventDefault()} className="header-search-sort desktop-only" style={{gap:8}}>
+              <label htmlFor="searchQuery" className="visually-hidden">Search</label>
               <input
+                id="searchQuery"
+                name="searchQuery"
                 className="header-search-input"
                 placeholder={inMovies?'Search movies...':'Search series...'}
                 value={query}
                 onChange={e=>setQuery(e.target.value)}
                 style={{flex:1,minWidth:220}}
               />
-              <select className="header-select" value={sort} onChange={e=>setSort(e.target.value)}>
+              <label htmlFor="sortSelect" className="visually-hidden">Sort field</label>
+              <select id="sortSelect" name="sortSelect" className="header-select" value={sort} onChange={e=>setSort(e.target.value)}>
                 {sortOptions.map(o=> <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              <select className="header-select" value={order} onChange={e=>setOrder(e.target.value)}>
+              <label htmlFor="orderSelect" className="visually-hidden">Sort order</label>
+              <select id="orderSelect" name="orderSelect" className="header-select" value={order} onChange={e=>setOrder(e.target.value)}>
                 <option value="desc">Desc</option>
                 <option value="asc">Asc</option>
               </select>
