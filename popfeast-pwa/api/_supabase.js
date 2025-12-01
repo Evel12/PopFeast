@@ -5,7 +5,6 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 export const MOCK_MODE = !SUPABASE_URL || !SUPABASE_SERVICE_KEY;
 export const supabase = (!MOCK_MODE) ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : null;
 
-// Minimal mock fallback
 export const mockData = {
   movies: [
     { id:'m1', title:'Mock Movie', year:2024, genres:['Action','Sci-Fi'], rating:8.2, poster_url:'', duration_minutes:120, description:'Mock description', created_at:new Date().toISOString() }
