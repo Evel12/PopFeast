@@ -1,4 +1,4 @@
-import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
+import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
 
 export default async function handler(req, res){
   if(req.method === 'GET'){
@@ -12,7 +12,8 @@ export default async function handler(req, res){
     return res.status(200).json(data);
   }
   if(req.method === 'POST'){
-    const { title, year, genres, description, rating, poster_url, duration_minutes } = req.body || {};
+    const body = await parseJson(req);
+    const { title, year, genres, description, rating, poster_url, duration_minutes } = body || {};
     if(!title || !String(title).trim()) return res.status(400).json({error:'title required'});
     const gArr = Array.isArray(genres) ? genres : (typeof genres === 'string' ? genres.split(',').map(s=>s.trim()).filter(Boolean) : []);
     const insertObj = {

@@ -59,27 +59,33 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // API requests: network-first for GET; avoid caching non-GET; graceful offline for POST
+  // API requests: cache-first for GET with background refresh; graceful offline for non-GET
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(request)
-        .then(res => {
-          if (request.method === 'GET') {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
+    event.respondWith((async () => {
+      if (request.method === 'GET') {
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(request);
+        // Kick off background refresh
+        fetch(request).then(res => {
+          if (res.ok) cache.put(request, res.clone());
+        }).catch(()=>{});
+        if (cached) return cached;
+        try {
+          const res = await fetch(request);
+          if (res.ok) cache.put(request, res.clone());
           return res;
-        })
-        .catch(async () => {
-          if (request.method === 'GET') {
-            const cached = await caches.match(request);
-            if (cached) return cached;
-            return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
-          }
-          // For non-GET (e.g., POST to favorites), return controlled offline response
+        } catch {
+          return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+        }
+      } else {
+        // Non-GET: attempt network, else report offline/queued
+        try {
+          return await fetch(request);
+        } catch {
           return new Response(JSON.stringify({ error: 'offline', queued: true }), { status: 503, headers: { 'Content-Type': 'application/json' } });
-        })
-    );
+        }
+      }
+    })());
     return;
   }
 

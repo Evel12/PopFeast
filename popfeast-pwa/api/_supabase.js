@@ -15,3 +15,16 @@ export const mockData = {
   favorites: [],
   comments: []
 };
+
+export async function parseJson(req){
+  return new Promise((resolve, reject) => {
+    if(req.method === 'GET') return resolve({});
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      if(!data) return resolve({});
+      try { resolve(JSON.parse(data)); } catch(e){ resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}

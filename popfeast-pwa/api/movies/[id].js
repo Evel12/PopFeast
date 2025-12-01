@@ -1,4 +1,4 @@
-import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
+import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
 
 export default async function handler(req, res){
   const { id } = req.query;
@@ -14,7 +14,7 @@ export default async function handler(req, res){
     return res.status(200).json(data);
   }
   if(req.method === 'PATCH'){
-    const body = req.body || {};
+    const body = await parseJson(req);
     const updateObj = {};
     ['title','year','genres','description','rating','poster_url','duration_minutes'].forEach(k=>{
       if(body[k] !== undefined){ updateObj[k] = body[k]; }

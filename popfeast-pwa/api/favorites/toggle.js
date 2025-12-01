@@ -1,8 +1,9 @@
-import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
+import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
 
 export default async function handler(req,res){
   if(req.method !== 'POST') return res.status(405).json({error:'method not allowed'});
-  const { item_id, item_type } = req.body || {};
+  const body = await parseJson(req);
+  const { item_id, item_type } = body || {};
   if(!item_id || !item_type) return res.status(400).json({error:'item_id & item_type required'});
   if(!['movie','series'].includes(item_type)) return res.status(400).json({error:'invalid item_type'});
   if(MOCK_MODE){

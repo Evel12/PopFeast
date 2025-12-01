@@ -1,4 +1,4 @@
-import { supabase, MOCK_MODE, mockData } from '../../_supabase.js';
+import { supabase, MOCK_MODE, mockData, parseJson } from '../../_supabase.js';
 
 export default async function handler(req,res){
   const { id } = req.query;
@@ -13,7 +13,8 @@ export default async function handler(req,res){
     return res.status(200).json(data);
   }
   if(req.method === 'POST'){
-    const { rating, content, username } = req.body || {};
+    const body = await parseJson(req);
+    const { rating, content, username } = body || {};
     if(rating==null || content==null) return res.status(400).json({error:'rating & content required'});
     if(MOCK_MODE){
       const c = { id:'c'+Date.now(), item_id:id, item_type:'series', rating:Number(rating), content:String(content), created_at:new Date().toISOString(), username: username? String(username).slice(0,40): null };

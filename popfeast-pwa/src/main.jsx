@@ -16,7 +16,7 @@ function Root(){
   useEffect(()=>{
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(() => {
-        const prefetch = ['/api/movies','/api/series','/api/favorites'];
+        const prefetch = ['/api/movies','/api/series','/api/favorites','/api/meta/genres'];
         prefetch.forEach(u => { try { fetch(u).catch(()=>{}); } catch(_){} });
       }).catch(()=>{});
     }
