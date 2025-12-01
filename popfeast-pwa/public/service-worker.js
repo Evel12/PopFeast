@@ -1,4 +1,4 @@
-const CACHE_NAME = "popfeast-cache-v4";
+const CACHE_NAME = "popfeast-cache-v5";
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -83,10 +83,10 @@ self.addEventListener("fetch", event => {
   if (url.pathname.startsWith("/api/")) {
     event.respondWith((async () => {
       if (request.method === 'GET') {
-        const isDetail = /^\/api\/(movies|series)\/[-0-9a-fA-F]+$/.test(url.pathname);
+        const isDetail = /^\/api\/(movies|series)\/[0-9a-fA-F-]+$/.test(url.pathname);
         const isFavorites = url.pathname === '/api/favorites';
-        // Detail endpoints & favorites or explicit bypass: network-first
-        if (bypass || isDetail || isFavorites) {
+        // Detail endpoints or explicit bypass: network-first
+        if (bypass || isDetail) {
           try {
             const res = await fetch(request);
             const ct = res.headers.get('content-type') || '';
@@ -101,7 +101,7 @@ self.addEventListener("fetch", event => {
           }
         }
 
-        // Default: cache-first with background refresh, only caching JSON
+        // Favorites and other GETs: cache-first with background refresh (offline friendly)
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(request);
         fetch(request).then(res => {

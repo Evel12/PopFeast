@@ -14,11 +14,15 @@ function loadQueue(){
 }
 function saveQueue(list){ localStorage.setItem(QUEUE_KEY, JSON.stringify(list)); }
 
-function pendingKeySet(){
+function pendingOpsMap(){
   const q = loadQueue();
-  const set = new Set();
-  for(const it of q){ set.add(`${it.item_type}:${it.item_id}`); }
-  return set;
+  const map = new Map();
+  for (const it of q) {
+    const key = `${it.item_type}:${it.item_id}`;
+    // last op wins
+    map.set(key, it.op || 'toggle');
+  }
+  return map;
 }
 
 async function flushQueue(){
@@ -27,7 +31,12 @@ async function flushQueue(){
   const remaining = [];
   for(const item of q){
     try{
-      const res = await fetch(apiUrl('/api/favorites/toggle'),{
+      const endpoint = item.op === 'add'
+        ? '/api/favorites/add'
+        : item.op === 'remove'
+          ? '/api/favorites/remove'
+          : '/api/favorites/toggle';
+      const res = await fetch(apiUrl(endpoint),{
         method:'POST',headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ item_id:item.item_id, item_type:item.item_type })
       });
@@ -53,15 +62,30 @@ async function fetchAll(){
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
-      // Source of truth = server; include only pending local toggles
-      const final = [...data];
-      const serverKeys = new Set(final.map(f => `${f.item_type}:${f.item_id}`));
-      const pend = pendingKeySet();
-      for(const f of local){
-        const key = `${f.item_type}:${f.item_id}`;
-        if(pend.has(key) && !serverKeys.has(key)){
-          final.push(f);
-          serverKeys.add(key);
+      // Source of truth = server; overlay pending operations
+      let final = [...data];
+      const serverSet = new Set(final.map(f => `${f.item_type}:${f.item_id}`));
+      const pend = pendingOpsMap();
+      for (const [key, op] of pend.entries()) {
+        const [item_type, item_id] = key.split(':');
+        if (op === 'add') {
+          if (!serverSet.has(key)) {
+            final.push({ item_id, item_type, created_at: new Date().toISOString() });
+            serverSet.add(key);
+          }
+        } else if (op === 'remove') {
+          if (serverSet.has(key)) {
+            final = final.filter(f => !(f.item_id === item_id && f.item_type === item_type));
+            serverSet.delete(key);
+          }
+        } else if (op === 'toggle') {
+          if (serverSet.has(key)) {
+            final = final.filter(f => !(f.item_id === item_id && f.item_type === item_type));
+            serverSet.delete(key);
+          } else {
+            final.push({ item_id, item_type, created_at: new Date().toISOString() });
+            serverSet.add(key);
+          }
         }
       }
       saveCache(final);
@@ -89,15 +113,17 @@ export async function toggleFavorite(item){
   // Optimistic local toggle immediately
   const cache = loadCache();
   const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-  if(idx<0){
+  const nowFav = idx < 0; // target state after click
+  if(nowFav){
     cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
   } else {
     cache.splice(idx,1);
   }
   saveCache(cache);
 
-  // Fire-and-forget network toggle; on failure, enqueue for later sync
-  fetch(apiUrl('/api/favorites/toggle'),{
+  // Fire-and-forget network ensure add/remove; on failure, enqueue
+  const endpoint = nowFav ? '/api/favorites/add' : '/api/favorites/remove';
+  fetch(apiUrl(endpoint),{
     method:'POST',headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ item_id:item.id, item_type:item.type })
   })
@@ -108,7 +134,7 @@ export async function toggleFavorite(item){
   })
   .catch(() => {
     const queue = loadQueue();
-    queue.push({ item_id:item.id, item_type:item.type, queued_at:Date.now() });
+    queue.push({ item_id:item.id, item_type:item.type, op: nowFav ? 'add' : 'remove', queued_at:Date.now() });
     saveQueue(queue);
   });
 }
