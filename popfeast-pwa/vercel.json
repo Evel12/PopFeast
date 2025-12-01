@@ -6,6 +6,7 @@
 	"regions": ["iad1"],
 	"rewrites": [
 		{ "source": "/api/(.*)", "destination": "/api/$1" },
+		{ "source": "/xapi/(.*)", "destination": "/api/$1" },
 		{ "source": "/(.*)", "destination": "/" }
 	]
 }

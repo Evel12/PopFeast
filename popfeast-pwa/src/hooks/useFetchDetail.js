@@ -7,14 +7,14 @@ export function useFetchDetail(type, id) {
   useEffect(() => {
     let active=true;
     setLoading(true);
-    const url = `/api/${type}/${id}?__bypass=1`;
-    fetch(url, { headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' }, cache: 'no-store' })
+    const url = `/xapi/${type}/${id}`;
+    fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
       .then(async r => {
         if (!r.ok) throw new Error('Gagal memuat detail');
         const ct = r.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
           // Retry bypassing caches in case a SPA HTML was served from a proxy/cache
-          const r2 = await fetch(url, { headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' }, cache: 'no-store' });
+          const r2 = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
           const ct2 = r2.headers.get('content-type') || '';
           if (!r2.ok || !ct2.includes('application/json')) throw new Error('Unexpected response type');
           return r2.json();
