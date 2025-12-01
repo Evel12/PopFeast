@@ -14,6 +14,13 @@ function loadQueue(){
 }
 function saveQueue(list){ localStorage.setItem(QUEUE_KEY, JSON.stringify(list)); }
 
+function pendingKeySet(){
+  const q = loadQueue();
+  const set = new Set();
+  for(const it of q){ set.add(`${it.item_type}:${it.item_id}`); }
+  return set;
+}
+
 async function flushQueue(){
   const q = loadQueue();
   if(!q.length) return;
@@ -46,15 +53,19 @@ async function fetchAll(){
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
-      // Merge API data with local cache, prefer local entries
-      const map = new Map();
-      [...local, ...data].forEach(f => {
+      // Source of truth = server; include only pending local toggles
+      const final = [...data];
+      const serverKeys = new Set(final.map(f => `${f.item_type}:${f.item_id}`));
+      const pend = pendingKeySet();
+      for(const f of local){
         const key = `${f.item_type}:${f.item_id}`;
-        map.set(key, f);
-      });
-      const merged = Array.from(map.values());
-      saveCache(merged);
-      return merged;
+        if(pend.has(key) && !serverKeys.has(key)){
+          final.push(f);
+          serverKeys.add(key);
+        }
+      }
+      saveCache(final);
+      return final;
     }
   } catch(e){ /* fallback to local */ }
   return local;
