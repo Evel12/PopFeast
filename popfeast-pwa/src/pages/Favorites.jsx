@@ -18,11 +18,11 @@ export default function Favorites() {
     // fetch full lists and filter to favorites
     try {
       const [moviesRes, seriesRes] = await Promise.all([
-        fetch('/api/movies'),
-        fetch('/api/series')
+        fetch('/api/movies', { headers: { 'Accept': 'application/json' } }),
+        fetch('/api/series', { headers: { 'Accept': 'application/json' } })
       ]);
-      const moviesData = moviesRes.ok ? await moviesRes.json() : [];
-      const seriesData = seriesRes.ok ? await seriesRes.json() : [];
+      const moviesData = (moviesRes.ok && (moviesRes.headers.get('content-type')||'').includes('application/json')) ? await moviesRes.json() : [];
+      const seriesData = (seriesRes.ok && (seriesRes.headers.get('content-type')||'').includes('application/json')) ? await seriesRes.json() : [];
       setFavMovies(moviesData.filter(m=>movieIds.has(m.id)).map(m=>({
         id: m.id,
         type: 'movie',

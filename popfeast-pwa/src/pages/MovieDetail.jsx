@@ -1,77 +1,81 @@
-import React,{useEffect,useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFetchDetail } from '../hooks/useFetchDetail.js';
-import { getFavorites,toggleFavorite } from '../utils/favorites.js';
+import { getFavorites, toggleFavorite } from '../utils/favorites.js';
 
-export default function MovieDetail(){
+export default function MovieDetail() {
   const { id } = useParams();
   const { data, loading, error } = useFetchDetail('movies', id);
-  const [fav,setFav]=useState(false);
+  const [fav, setFav] = useState(false);
 
-  useEffect(()=>{ 
+  useEffect(() => {
     const load = async () => {
-      if(!data?.id) return;
+      if (!data?.id) return;
       const all = await getFavorites();
-      const isFav = all.some(f=>f.item_id===data.id && f.item_type==='movie');
+      const isFav = all.some(f => f.item_id === data.id && f.item_type === 'movie');
       setFav(isFav);
     };
     load();
-  },[data]);
+  }, [data]);
 
-  const handleFav=async ()=>{
-    if(!data)return;
-    // Optimistic flip
-    setFav(prev => !prev);
+  const handleFav = async () => {
+    if (!data) return;
+    setFav(prev => !prev); // optimistic
     toggleFavorite({
-      id:data.id,title:data.title,type:'movie',
-      poster_url:data.poster_url,rating:data.rating,
-      year:data.year,duration_minutes:data.duration_minutes
-    }).then(async ()=>{
-      const all = await getFavorites();
-      const isFav = all.some(f=>f.item_id===data.id && f.item_type==='movie');
-      setFav(isFav);
-    }).catch(()=>{
-      // Offline: keep optimistic state; will reconcile after reconnect
+      id: data.id,
+      title: data.title,
+      type: 'movie',
+      poster_url: data.poster_url,
+      rating: data.rating,
+      year: data.year,
+      duration_minutes: data.duration_minutes
+    }).catch(() => {
+      // keep optimistic state offline; reconciliation happens later
     });
   };
 
-  const [comments,setComments]=useState([]);
-  const [cLoading,setCLoading]=useState(true);
-  const [rating,setRating]=useState(8);
-  const [content,setContent]=useState('');
-  const [submitLoading,setSubmitLoading]=useState(false);
-  const [rating,setRating]=useState('');
-  const [content,setContent]=useState('');
-  const [username,setUsername]=useState('');
+  const [comments, setComments] = useState([]);
+  const [cLoading, setCLoading] = useState(true);
+  const [rating, setRating] = useState('');
+  const [content, setContent] = useState('');
+  const [username, setUsername] = useState('');
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  useEffect(() => {
     setCLoading(true);
-    fetch(`/api/movies/${id}/comments`)
-      .then(r=>r.json()).then(j=>setComments(j))
-      .catch(()=>{}).finally(()=>setCLoading(false));
     fetch(`/api/movies/${id}/comments`, { headers: { 'Accept': 'application/json' } })
-      .then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); })
-      .then(j=>setComments(Array.isArray(j)?j:[]))
-  const addComment=e=>{
+      .then(async r => { if (!r.ok) throw new Error('net'); return r.json(); })
+      .then(j => setComments(Array.isArray(j) ? j : []))
+      .catch(() => {})
+      .finally(() => setCLoading(false));
+  }, [id]);
+
+  const addComment = e => {
     e.preventDefault();
-    if(!content.trim())return;
-    localStorage.setItem('pf_username', username);
+    if (!content.trim()) return;
     setSubmitLoading(true);
-    fetch(`/api/movies/${id}/comments`,{
-      headers:{'Content-Type':'application/json'},
     fetch(`/api/movies/${id}/comments`, {
-    }).then(r=>r.json()).then(j=>{
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
         rating: (rating === '' ? null : Number(rating)),
         content,
         username: username ? username : null
       })
-    }).then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); }).then(j=>{
+    })
+      .then(async r => { if (!r.ok) throw new Error('net'); return r.json(); })
+      .then(j => {
+        setComments(prev => [j, ...prev]);
+        setContent('');
+        setRating('');
+        setUsername('');
+      })
+      .finally(() => setSubmitLoading(false));
+  };
 
-      setRating('');
-      setUsername('');
-  if(loading) return <div className="detail"><div className="skeleton" style={{height:34,width:'50%',borderRadius:10}}/></div>;
-  if(error) return <p className="muted">Error: {error}</p>;
-  if(!data) return <p className="muted">Tidak ditemukan</p>;
+  if (loading) return <div className="detail"><div className="skeleton" style={{ height: 34, width: '50%', borderRadius: 10 }} /></div>;
+  if (error) return <p className="muted">Error: {error}</p>;
+  if (!data) return <p className="muted">Tidak ditemukan</p>;
 
   const avg = data.rating ? Number(data.rating).toFixed(1) : '0.0';
   const genres = data.genres || [];
@@ -80,20 +84,20 @@ export default function MovieDetail(){
     <article className="detail">
       <div className="detail-hero">
         <div className="detail-poster">
-          {data.poster_url ? <img src={data.poster_url} alt={data.title}/> :
-            <div className="media-thumb-fallback" style={{fontSize:'2.2rem'}}>{(data.title||'?').charAt(0).toUpperCase()}</div>}
+          {data.poster_url ? <img src={data.poster_url} alt={data.title} /> :
+            <div className="media-thumb-fallback" style={{ fontSize: '2.2rem' }}>{(data.title || '?').charAt(0).toUpperCase()}</div>}
         </div>
         <div className="detail-main">
           <h2>{data.title}</h2>
           <div className="detail-meta">
             {data.year && <div className="meta-chip">{data.year}</div>}
-            {genres.map(g=> <div key={g} className="meta-chip">{g}</div>)}
+            {genres.map(g => <div key={g} className="meta-chip">{g}</div>)}
             {data.duration_minutes && <div className="meta-chip">{data.duration_minutes} min</div>}
             <div className="avg-rating"><strong>⭐{avg}</strong>/10</div>
           </div>
           <div className="detail-fav-wrap">
-            <button onClick={handleFav} className={`detail-fav-btn ${fav?'active':''}`}>
-              🍿 {fav?'Favorited':'Add to Favorites'}
+            <button onClick={handleFav} className={`detail-fav-btn ${fav ? 'active' : ''}`}>
+              🍿 {fav ? 'Favorited' : 'Add to Favorites'}
             </button>
           </div>
         </div>

@@ -7,9 +7,11 @@ export function useFetchList(type) {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch(`/api/${type}`)
+    fetch(`/api/${type}`, { headers: { 'Accept': 'application/json' } })
       .then(r => {
         if (!r.ok) throw new Error('Gagal memuat list');
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('Unexpected response type');
         return r.json();
       })
       .then(j => { if(active){ setData(j); setError(''); } })
