@@ -5,12 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:4000'
+      // Point to local Vercel dev for popfeast-api
+      '/api': 'http://localhost:3000'
     }
   },
   preview: {
     proxy: {
-      '/api': 'http://localhost:4000'
+      '/api': 'http://localhost:3000'
     }
   }
 });
