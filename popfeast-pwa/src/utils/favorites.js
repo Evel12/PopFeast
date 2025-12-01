@@ -39,17 +39,24 @@ if (typeof window !== 'undefined') {
 }
 
 async function fetchAll(){
+  const local = loadCache();
   try {
     const res = await fetch('/api/favorites');
     if(!res.ok) throw new Error('net');
     const data = await res.json();
-    // normalize to {item_id,item_type}
     if(Array.isArray(data)){
-      saveCache(data);
-      return data;
+      // Merge API data with local cache, prefer local entries
+      const map = new Map();
+      [...local, ...data].forEach(f => {
+        const key = `${f.item_type}:${f.item_id}`;
+        map.set(key, f);
+      });
+      const merged = Array.from(map.values());
+      saveCache(merged);
+      return merged;
     }
-  } catch(e){ /* fallback */ }
-  return loadCache();
+  } catch(e){ /* fallback to local */ }
+  return local;
 }
 
 export async function getFavorites(){
@@ -76,9 +83,18 @@ export async function toggleFavorite(item){
       // Force offline path for 503/non-ok
       throw new Error(`api ${res.status}`);
     }
-    // refresh cache
-    await fetchAll();
     const j = await res.json();
+    // Persist locally as well (so it survives mock mode or cold starts)
+    const cache = loadCache();
+    const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
+    if(j.status === 'added'){
+      if(idx<0){ cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() }); }
+    } else {
+      if(idx>=0){ cache.splice(idx,1); }
+    }
+    saveCache(cache);
+    // Refresh merged cache view
+    await fetchAll();
     return j.status === 'added';
   } catch(e){
     // offline: queue the toggle to sync later and update local cache optimistically
