@@ -98,8 +98,10 @@ export default function MovieDetail(){
       <div className="comments-wrap">
         <form className="comment-form form-panel" onSubmit={addComment}>
           <h3>Tambah Komentar & Rating</h3>
-          <label className="form-field">Nama / Username
+          <label className="form-field" htmlFor="username">Nama / Username
             <input
+              id="username"
+              name="username"
               className="form-input"
               type="text"
               maxLength={40}
@@ -108,8 +110,10 @@ export default function MovieDetail(){
               placeholder="Nama kamu (opsional)"
             />
           </label>
-          <label className="form-field">Rating (0-10)
+          <label className="form-field" htmlFor="rating">Rating (0-10)
             <input
+              id="rating"
+              name="rating"
               className="form-input"
               type="number" min="0" max="10" step="0.1"
               value={rating}
@@ -117,8 +121,10 @@ export default function MovieDetail(){
               required
             />
           </label>
-          <label className="form-field">Komentar
+          <label className="form-field" htmlFor="content">Komentar
             <textarea
+              id="content"
+              name="content"
               className="form-textarea"
               rows="4"
               value={content}

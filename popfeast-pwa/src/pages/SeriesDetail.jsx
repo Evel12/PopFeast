@@ -97,16 +97,16 @@ export default function SeriesDetail(){
       <div className="comments-wrap">
         <form className="comment-form form-panel" onSubmit={addComment}>
           <h3>Tambah Komentar & Rating</h3>
-          <label className="form-field">Nama / Username
-            <input className="form-input" type="text" maxLength={40} value={username}
+          <label className="form-field" htmlFor="username">Nama / Username
+            <input id="username" name="username" className="form-input" type="text" maxLength={40} value={username}
               onChange={e=>setUsername(e.target.value)} placeholder="Nama kamu (opsional)" />
           </label>
-          <label className="form-field">Rating (0-10)
-            <input className="form-input" type="number" min="0" max="10" step="0.1"
+          <label className="form-field" htmlFor="rating">Rating (0-10)
+            <input id="rating" name="rating" className="form-input" type="number" min="0" max="10" step="0.1"
               value={rating} onChange={e=>setRating(e.target.value)} required />
           </label>
-          <label className="form-field">Komentar
-            <textarea className="form-textarea" rows="4"
+          <label className="form-field" htmlFor="content">Komentar
+            <textarea id="content" name="content" className="form-textarea" rows="4"
               value={content} onChange={e=>setContent(e.target.value)}
               placeholder="Pendapat tentang series..." required />
           </label>
