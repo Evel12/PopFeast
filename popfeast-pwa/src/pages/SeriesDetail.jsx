@@ -37,28 +37,30 @@ export default function SeriesDetail(){
 
   const [comments,setComments]=useState([]);
   const [cLoading,setCLoading]=useState(true);
-  const [rating,setRating]=useState(8);
+  const [rating,setRating]=useState('');
   const [content,setContent]=useState('');
   const [submitLoading,setSubmitLoading]=useState(false);
-  const [username,setUsername]=useState(()=> localStorage.getItem('pf_username') || '');
+  const [username,setUsername]=useState('');
 
   useEffect(()=>{
     setCLoading(true);
-    fetch(`/api/series/${id}/comments`)
-      .then(r=>r.json()).then(j=>setComments(j))
+    fetch(`/api/series/${id}/comments`, { headers: { 'Accept': 'application/json' } })
+      .then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); })
+      .then(j=>setComments(Array.isArray(j)?j:[]))
       .catch(()=>{}).finally(()=>setCLoading(false));
   },[id]);
 
   const addComment=e=>{
     e.preventDefault();
     if(!content.trim())return;
-    localStorage.setItem('pf_username', username);
     setSubmitLoading(true);
     fetch(`/api/series/${id}/comments`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({rating:Number(rating),content,username: username || null})
-    }).then(r=>r.json()).then(j=>{
+      method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({rating: (rating === '' ? null : Number(rating)), content, username: username ? username : null})
+    }).then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); }).then(j=>{
       setComments(prev=>[j,...prev]);setContent('');
+      setRating('');
+      setUsername('');
     }).finally(()=>setSubmitLoading(false));
   };
 

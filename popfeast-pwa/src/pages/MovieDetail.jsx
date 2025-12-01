@@ -40,29 +40,35 @@ export default function MovieDetail(){
   const [rating,setRating]=useState(8);
   const [content,setContent]=useState('');
   const [submitLoading,setSubmitLoading]=useState(false);
-  const [username,setUsername]=useState(()=> localStorage.getItem('pf_username') || '');
-
-  useEffect(()=>{
+  const [rating,setRating]=useState('');
+  const [content,setContent]=useState('');
+  const [username,setUsername]=useState('');
     setCLoading(true);
     fetch(`/api/movies/${id}/comments`)
       .then(r=>r.json()).then(j=>setComments(j))
       .catch(()=>{}).finally(()=>setCLoading(false));
-  },[id]);
-
+    fetch(`/api/movies/${id}/comments`, { headers: { 'Accept': 'application/json' } })
+      .then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); })
+      .then(j=>setComments(Array.isArray(j)?j:[]))
   const addComment=e=>{
     e.preventDefault();
     if(!content.trim())return;
     localStorage.setItem('pf_username', username);
     setSubmitLoading(true);
     fetch(`/api/movies/${id}/comments`,{
-      method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({rating:Number(rating),content,username: username || null})
+    fetch(`/api/movies/${id}/comments`, {
     }).then(r=>r.json()).then(j=>{
-      setComments(prev=>[j,...prev]);setContent('');
-    }).finally(()=>setSubmitLoading(false));
-  };
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({
+        rating: (rating === '' ? null : Number(rating)),
+        content,
+        username: username ? username : null
+      })
+    }).then(async r=>{ if(!r.ok) throw new Error('net'); return r.json(); }).then(j=>{
 
+      setRating('');
+      setUsername('');
   if(loading) return <div className="detail"><div className="skeleton" style={{height:34,width:'50%',borderRadius:10}}/></div>;
   if(error) return <p className="muted">Error: {error}</p>;
   if(!data) return <p className="muted">Tidak ditemukan</p>;

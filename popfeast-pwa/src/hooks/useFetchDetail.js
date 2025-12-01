@@ -7,7 +7,7 @@ export function useFetchDetail(type, id) {
   useEffect(() => {
     let active=true;
     setLoading(true);
-    fetch(`/api/${type}/${id}`)
+    fetch(`/api/${type}/${id}`, { headers: { 'Accept': 'application/json' } })
       .then(async r => {
         if (!r.ok) throw new Error('Gagal memuat detail');
         const ct = r.headers.get('content-type') || '';

@@ -72,11 +72,6 @@ export default function Series() {
       rating: series.rating,
       seasons: series.seasons,
       episodes: series.episodes
-    }).then(async () => {
-      if (!navigator.onLine) return; // keep optimistic state offline
-      const all = await getFavorites();
-      const set = new Set(all.filter(f=>f.item_type==='series').map(f=>f.item_id));
-      setFavSet(set);
     }).catch(() => {
       // Offline or failure: keep optimistic state; will reconcile when back online
     }).finally(() => {
