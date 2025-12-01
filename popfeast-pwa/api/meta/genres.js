@@ -1,6 +1,7 @@
 import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
 
 export default async function handler(req, res){
+  res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method !== 'GET') return res.status(405).json({error:'method not allowed'});
   if(MOCK_MODE){
     const set = new Set();

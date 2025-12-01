@@ -1,6 +1,7 @@
 import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
 
 export default async function handler(req, res){
+  res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method === 'GET'){
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300');
     if(MOCK_MODE){ return res.status(200).json(mockData.series); }

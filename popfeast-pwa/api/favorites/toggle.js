@@ -1,6 +1,7 @@
 import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
 
 export default async function handler(req,res){
+  res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method !== 'POST') return res.status(405).json({error:'method not allowed'});
   const body = await parseJson(req);
   const { item_id, item_type } = body || {};
