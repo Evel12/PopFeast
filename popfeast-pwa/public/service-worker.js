@@ -1,4 +1,4 @@
-const CACHE_NAME = "popfeast-cache-v2";
+const CACHE_NAME = "popfeast-cache-v3";
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,7 +12,25 @@ const STATIC_ASSETS = [
 // Install - precache only fixed assets (not js/css)
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(STATIC_ASSETS);
+      // Warm common API endpoints if online
+      const apiToWarm = [
+        '/api/movies',
+        '/api/series',
+        '/api/meta/genres',
+        '/api/favorites'
+      ];
+      await Promise.all(apiToWarm.map(async (u) => {
+        try {
+          const res = await fetch(u, { cache: 'no-store' });
+          if (res && res.ok) {
+            await cache.put(u, res.clone());
+          }
+        } catch {}
+      }));
+    })()
   );
   self.skipWaiting();
 });
