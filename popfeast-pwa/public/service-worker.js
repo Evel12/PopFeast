@@ -54,6 +54,7 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
+  const bypass = url.searchParams.has('__bypass') || request.headers.get('x-bypass-cache') === '1';
 
   // SPA navigation requests: cache-first for app shell to ensure offline works
   if (request.mode === 'navigate') {
@@ -82,9 +83,25 @@ self.addEventListener("fetch", event => {
   if (url.pathname.startsWith("/api/")) {
     event.respondWith((async () => {
       if (request.method === 'GET') {
+        // For favorites list or explicit bypass: network-first and do not serve cached
+        if (bypass || url.pathname === '/api/favorites') {
+          try {
+            const res = await fetch(request);
+            const ct = res.headers.get('content-type') || '';
+            // do not cache favorites when bypassing; keep behavior predictable
+            if (!bypass && res.ok && ct.includes('application/json')) {
+              const cache = await caches.open(CACHE_NAME);
+              cache.put(request, res.clone());
+            }
+            return res;
+          } catch {
+            return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+          }
+        }
+
+        // Default: cache-first with background refresh, only caching JSON
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(request);
-        // Kick off background refresh
         fetch(request).then(res => {
           const ct = res.headers.get('content-type') || '';
           if (res.ok && ct.includes('application/json')) cache.put(request, res.clone());

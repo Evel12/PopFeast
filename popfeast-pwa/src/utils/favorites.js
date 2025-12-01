@@ -41,7 +41,7 @@ if (typeof window !== 'undefined') {
 async function fetchAll(){
   const local = loadCache();
   try {
-    const res = await fetch('/api/favorites');
+    const res = await fetch('/api/favorites?__bypass=1', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
@@ -93,7 +93,7 @@ export async function toggleFavorite(item){
       if(idx>=0){ cache.splice(idx,1); }
     }
     saveCache(cache);
-    // Refresh merged cache view
+    // Refresh merged cache view with network bypass so UI reflects changes immediately
     await fetchAll();
     return j.status === 'added';
   } catch(e){
