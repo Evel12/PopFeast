@@ -58,7 +58,7 @@ if (typeof window !== 'undefined') {
 async function fetchAll(){
   const local = loadCache();
   try {
-    const res = await fetch(apiUrl('/api/favorites'), { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+    const res = await fetch(apiUrl('/api/favorites?__bypass=1&_ts='+Date.now()), { headers: { 'Accept': 'application/json', 'x-bypass-cache':'1' }, cache: 'no-store' });
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
@@ -100,7 +100,7 @@ export async function toggleFavorite(item){
   }
 
   // Online: call API, only update cache after success
-  const res = await fetch(apiUrl(endpoint), { method:'POST', headers:{'Content-Type':'application/json'}, body });
+  const res = await fetch(apiUrl(endpoint), { method:'POST', headers:{'Content-Type':'application/json','x-bypass-cache':'1','Accept':'application/json'}, body, cache:'no-store' });
   if (!res.ok) {
     // Do not modify local cache if server rejects
     const errText = await res.text().catch(()=> '');

@@ -4,6 +4,7 @@ import { applyCors } from '../_cors.js';
 export default async function handler(req,res){
   if (applyCors(req, res)) return;
   res.setHeader('Content-Type','application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
   if(req.method !== 'POST') return res.status(405).json({error:'method not allowed'});
   const body = await parseJson(req);
   const { item_id, item_type } = body || {};
