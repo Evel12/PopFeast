@@ -44,19 +44,7 @@ export default function SeriesDetail() {
       seasons: data.seasons,
       episodes: data.episodes
     })
-      .then(async () => {
-        try {
-          const all = await getFavorites();
-          const isFav = all.some(f => f.item_id === data.id && f.item_type === 'series');
-          setFav(isFav);
-        } catch {
-          // ignore
-        }
-      })
-      .catch(() => {
-        // Revert if failed and you want strict behavior:
-        setFav(prev => !prev);
-      });
+      .catch(() => { /* keep optimistic state; queued for sync */ });
   };
 
   // Comments state

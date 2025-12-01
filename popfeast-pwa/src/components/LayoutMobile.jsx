@@ -5,7 +5,7 @@ import { useSearchSort } from '../context/SearchSortContext.jsx';
 
 export default function LayoutMobile(){
   const loc = useLocation();
-  const inMovies = loc.pathname.startsWith('/movies');
+  const inMovies = loc.pathname.startsWith('/movies') && !loc.pathname.includes('/movies/');
   const inSeries = loc.pathname.startsWith('/series') && !loc.pathname.includes('/series/');
   const {
     query,setQuery,sort,setSort,order,setOrder,

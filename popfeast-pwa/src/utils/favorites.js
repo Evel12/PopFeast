@@ -30,8 +30,8 @@ async function flushQueue(){
     }
   }
   saveQueue(remaining);
-  // refresh cache if any processed
-  if(remaining.length !== q.length){ await fetchAll(); }
+  // Avoid blocking UI; refresh cache async
+  if(remaining.length !== q.length){ fetchAll().catch(()=>{}); }
 }
 
 // Attempt to flush queue when back online
@@ -75,40 +75,29 @@ export async function isFavorite(item_id, item_type){
 }
 
 export async function toggleFavorite(item){
-  try {
-    const res = await fetch(apiUrl('/api/favorites/toggle'),{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ item_id:item.id, item_type:item.type })
-    });
-    if(!res.ok){
-      // Force offline path for 503/non-ok
-      throw new Error(`api ${res.status}`);
-    }
-    const j = await res.json();
-    // Persist locally as well (so it survives mock mode or cold starts)
-    const cache = loadCache();
-    const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-    if(j.status === 'added'){
-      if(idx<0){ cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() }); }
-    } else {
-      if(idx>=0){ cache.splice(idx,1); }
-    }
-    saveCache(cache);
-    // Refresh merged cache view with network bypass so UI reflects changes immediately
-    await fetchAll();
-  } catch (e) {
-    // Queue for later sync and update local cache optimistically
+  // Optimistic local toggle immediately
+  const cache = loadCache();
+  const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
+  if(idx<0){
+    cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
+  } else {
+    cache.splice(idx,1);
+  }
+  saveCache(cache);
+
+  // Fire-and-forget network toggle; on failure, enqueue for later sync
+  fetch(apiUrl('/api/favorites/toggle'),{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ item_id:item.id, item_type:item.type })
+  })
+  .then(async res => {
+    if(!res.ok) throw new Error('net');
+    // Best-effort background refresh
+    fetchAll().catch(()=>{});
+  })
+  .catch(() => {
     const queue = loadQueue();
     queue.push({ item_id:item.id, item_type:item.type, queued_at:Date.now() });
     saveQueue(queue);
-
-    const cache = loadCache();
-    const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-    if(idx<0){
-      cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
-    } else {
-      cache.splice(idx,1);
-    }
-    saveCache(cache);
-  }
+  });
 }
