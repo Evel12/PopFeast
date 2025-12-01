@@ -1,11 +1,12 @@
 {
-	"version": 2,
-	"buildCommand": "npm run build",
-	"outputDirectory": "dist",
-	"devCommand": "npm run dev",
-	"regions": ["iad1"],
-	"rewrites": [
-		{ "source": "/api/(.*)", "destination": "/api/$1" },
-		{ "source": "/(.*)", "destination": "/" }
-	]
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "regions": ["iad1"],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://popfeast.vercel.app/api/$1" },
+    { "source": "/xapi/(.*)", "destination": "https://popfeast.vercel.app/api/$1" },
+    { "source": "/((?!api/|xapi/).*)", "destination": "/" }
+  ]
 }

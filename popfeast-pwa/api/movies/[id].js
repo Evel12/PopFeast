@@ -1,43 +1,38 @@
-import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
-
-export default async function handler(req, res){
+// If your existing /api files use CommonJS (module.exports = ...), mirror that style.
+// This ESM style matches Vercel examples when the project uses "type":"module".
+export default async function handler(req, res) {
   const { id } = req.query;
-  if(req.method === 'GET'){
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300');
-    if(MOCK_MODE){
-      const itm = mockData.movies.find(m=>m.id===id);
-      if(!itm) return res.status(404).json({error:'Not found'});
-      return res.status(200).json(itm);
+  try {
+    const upstream = process.env.UPSTREAM_API_URL;
+    res.setHeader('Cache-Control', 'no-store');
+
+    if (!upstream) {
+      // Temporary stub so the details page works in prod until you wire the real backend.
+      return res.status(200).json({
+        id: Number(id) || id,
+        title: `Stub movie ${id}`,
+        poster_url: '',
+        rating: 0,
+        year: null,
+        duration_minutes: null,
+        genres: [],
+        description: 'Temporary stub response from /api/movies/[id].js. Set UPSTREAM_API_URL to fetch real data.'
+      });
     }
-    const { data, error } = await supabase.from('movies').select('*').eq('id',id).single();
-    if(error || !data) return res.status(404).json({error:error?.message||'Not found'});
-    return res.status(200).json(data);
-  }
-  if(req.method === 'PATCH'){
-    const body = await parseJson(req);
-    const updateObj = {};
-    ['title','year','genres','description','rating','poster_url','duration_minutes'].forEach(k=>{
-      if(body[k] !== undefined){ updateObj[k] = body[k]; }
+
+    const r = await fetch(`${upstream}/movies/${id}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store'
     });
-    if(MOCK_MODE){
-      const idx = mockData.movies.findIndex(m=>m.id===id);
-      if(idx<0) return res.status(404).json({error:'Not found'});
-      mockData.movies[idx] = { ...mockData.movies[idx], ...updateObj };
-      return res.status(200).json(mockData.movies[idx]);
+
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      return res.status(502).json({ error: 'bad_upstream', message: 'Upstream did not return JSON' });
     }
-    const { data, error } = await supabase.from('movies').update(updateObj).eq('id',id).select().single();
-    if(error) return res.status(500).json({error:error.message});
-    return res.status(200).json(data);
+
+    const j = await r.json();
+    return res.status(r.status).json(j);
+  } catch (e) {
+    return res.status(500).json({ error: 'server_error', message: e.message });
   }
-  if(req.method === 'DELETE'){
-    if(MOCK_MODE){
-      const idx = mockData.movies.findIndex(m=>m.id===id);
-      if(idx<0) return res.status(404).json({error:'Not found'});
-      mockData.movies.splice(idx,1); return res.status(200).json({status:'ok'});
-    }
-    const { error } = await supabase.from('movies').delete().eq('id',id);
-    if(error) return res.status(500).json({error:error.message});
-    return res.status(200).json({status:'ok'});
-  }
-  return res.status(405).json({error:'method not allowed'});
 }
