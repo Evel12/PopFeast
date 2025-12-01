@@ -41,7 +41,7 @@ if (typeof window !== 'undefined') {
 async function fetchAll(){
   const local = loadCache();
   try {
-    const res = await fetch('/api/favorites?__bypass=1&_ts=' + Date.now(), { headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' }, cache: 'no-store' });
+    const res = await fetch('/api/favorites', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
@@ -95,21 +95,19 @@ export async function toggleFavorite(item){
     saveCache(cache);
     // Refresh merged cache view with network bypass so UI reflects changes immediately
     await fetchAll();
-    return j.status === 'added';
-  } catch(e){
-    // offline: queue the toggle to sync later and update local cache optimistically
+  } catch (e) {
+    // Queue for later sync and update local cache optimistically
     const queue = loadQueue();
-    queue.push({ item_id:item.id, item_type:item.type, ts:Date.now() });
+    queue.push({ item_id:item.id, item_type:item.type, queued_at:Date.now() });
     saveQueue(queue);
+
     const cache = loadCache();
     const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-    if(idx>=0){ cache.splice(idx,1); saveCache(cache); return false; }
-    cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() }); saveCache(cache); return true;
+    if(idx<0){
+      cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
+    } else {
+      cache.splice(idx,1);
+    }
+    saveCache(cache);
   }
-  return false;
 }
-
-export function clearFavorites(){ localStorage.removeItem(KEY); }
-
-// Initialize: try flushing any pending queue on startup
-flushQueue();
