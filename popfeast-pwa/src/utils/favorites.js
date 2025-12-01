@@ -62,34 +62,9 @@ async function fetchAll(){
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
-      // Source of truth = server; overlay pending operations
-      let final = [...data];
-      const serverSet = new Set(final.map(f => `${f.item_type}:${f.item_id}`));
-      const pend = pendingOpsMap();
-      for (const [key, op] of pend.entries()) {
-        const [item_type, item_id] = key.split(':');
-        if (op === 'add') {
-          if (!serverSet.has(key)) {
-            final.push({ item_id, item_type, created_at: new Date().toISOString() });
-            serverSet.add(key);
-          }
-        } else if (op === 'remove') {
-          if (serverSet.has(key)) {
-            final = final.filter(f => !(f.item_id === item_id && f.item_type === item_type));
-            serverSet.delete(key);
-          }
-        } else if (op === 'toggle') {
-          if (serverSet.has(key)) {
-            final = final.filter(f => !(f.item_id === item_id && f.item_type === item_type));
-            serverSet.delete(key);
-          } else {
-            final.push({ item_id, item_type, created_at: new Date().toISOString() });
-            serverSet.add(key);
-          }
-        }
-      }
-      saveCache(final);
-      return final;
+      // Source of truth = server; do not overlay pending ops
+      saveCache(data);
+      return data;
     }
   } catch(e){ /* fallback to local */ }
   return local;
@@ -110,31 +85,28 @@ export async function isFavorite(item_id, item_type){
 }
 
 export async function toggleFavorite(item){
-  // Optimistic local toggle immediately
-  const cache = loadCache();
-  const idx = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-  const nowFav = idx < 0; // target state after click
-  if(nowFav){
-    cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
-  } else {
-    cache.splice(idx,1);
-  }
-  saveCache(cache);
+  // Determine intended operation by current server state
+  const current = await fetchAll();
+  const exists = current.some(f=>f.item_id===item.id && f.item_type===item.type);
+  const endpoint = exists ? '/api/favorites/remove' : '/api/favorites/add';
+  const body = JSON.stringify({ item_id:item.id, item_type:item.type });
 
-  // Fire-and-forget network ensure add/remove; on failure, enqueue
-  const endpoint = nowFav ? '/api/favorites/add' : '/api/favorites/remove';
-  fetch(apiUrl(endpoint),{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ item_id:item.id, item_type:item.type })
-  })
-  .then(async res => {
-    if(!res.ok) throw new Error('net');
-    // Best-effort background refresh
-    fetchAll().catch(()=>{});
-  })
-  .catch(() => {
+  // If offline, queue and return queued
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const queue = loadQueue();
-    queue.push({ item_id:item.id, item_type:item.type, op: nowFav ? 'add' : 'remove', queued_at:Date.now() });
+    queue.push({ item_id:item.id, item_type:item.type, op: exists ? 'remove' : 'add', queued_at:Date.now() });
     saveQueue(queue);
-  });
+    return { status: 'queued' };
+  }
+
+  // Online: call API, only update cache after success
+  const res = await fetch(apiUrl(endpoint), { method:'POST', headers:{'Content-Type':'application/json'}, body });
+  if (!res.ok) {
+    // Do not modify local cache if server rejects
+    const errText = await res.text().catch(()=> '');
+    throw new Error(errText || 'Failed to update favorite');
+  }
+  // Refresh from server to be exact
+  const latest = await fetchAll();
+  return { status: exists ? 'removed' : 'added', data: latest };
 }

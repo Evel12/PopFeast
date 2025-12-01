@@ -57,13 +57,7 @@ export default function Series() {
     e.stopPropagation();
     if (pending.has(series.id)) return;
     setPending(prev => new Set(prev).add(series.id));
-    // Optimistic update
-    const wasFav = favSet.has(series.id);
-    setFavSet(prev => {
-      const next = new Set(prev);
-      if (wasFav) next.delete(series.id); else next.add(series.id);
-      return next;
-    });
+    // Server-confirmed update
     toggleFavorite({
       id: series.id,
       title: series.title,
@@ -73,12 +67,11 @@ export default function Series() {
       seasons: series.seasons,
       episodes: series.episodes
     }).then(async () => {
-      if (!navigator.onLine) return;
       const all = await getFavorites();
       const set = new Set(all.filter(f=>f.item_type==='series').map(f=>f.item_id));
       setFavSet(set);
     }).catch(() => {
-      // Offline or failure: keep optimistic state; will reconcile when back online
+      // Failure leaves UI unchanged until next refresh (server truth)
     }).finally(() => {
       setPending(prev => { const next = new Set(prev); next.delete(series.id); return next; });
     });

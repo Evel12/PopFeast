@@ -33,11 +33,10 @@ export default function MovieDetail() {
     load();
   }, [data]);
 
-  const handleFav = () => {
+  const handleFav = async () => {
     if (!data) return;
-    // Optimistic toggle
-    setFav(prev => !prev);
-    toggleFavorite({
+    try {
+      await toggleFavorite({
       id: data.id,
       title: data.title,
       type: 'movie',
@@ -45,9 +44,12 @@ export default function MovieDetail() {
       rating: data.rating,
       year: data.year,
       duration_minutes: data.duration_minutes
-    }).catch(() => {
-      // If offline or failed, the utility queues reconciliation; keep optimistic state
-    });
+      });
+      const all = await getFavorites();
+      setFav(all.some(f => f.item_id === data.id && f.item_type === 'movie'));
+    } catch {
+      // No change on failure; server is source of truth
+    }
   };
 
   // Comments state

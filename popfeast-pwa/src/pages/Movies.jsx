@@ -58,14 +58,7 @@ export default function Movies() {
     e.stopPropagation();
     if (pending.has(movie.id)) return; // prevent spamming/races
     setPending(prev => new Set(prev).add(movie.id));
-    // Optimistic update: flip immediately
-    const wasFav = favSet.has(movie.id);
-    setFavSet(prev => {
-      const next = new Set(prev);
-      if (wasFav) next.delete(movie.id); else next.add(movie.id);
-      return next;
-    });
-    // Fire request in background; reconcile if it fails
+    // Server-confirmed update: call API then refresh favorites
     toggleFavorite({
       id: movie.id,
       title: movie.title,
@@ -75,12 +68,11 @@ export default function Movies() {
       year: movie.year,
       duration_minutes: movie.duration_minutes
     }).then(async () => {
-      if (!navigator.onLine) return;
       const all = await getFavorites();
       const set = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
       setFavSet(set);
     }).catch(() => {
-      // Offline or failure: keep optimistic state; will reconcile when back online
+      // On failure, leave as-is (DB is source of truth)
     }).finally(() => {
       setPending(prev => { const next = new Set(prev); next.delete(movie.id); return next; });
     });

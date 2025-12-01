@@ -32,19 +32,23 @@ export default function SeriesDetail() {
     load();
   }, [data]);
 
-  const handleFav = () => {
+  const handleFav = async () => {
     if (!data) return;
-    setFav(prev => !prev);
-    toggleFavorite({
-      id: data.id,
-      title: data.title,
-      type: 'series',
-      poster_url: data.poster_url,
-      rating: data.rating,
-      seasons: data.seasons,
-      episodes: data.episodes
-    })
-      .catch(() => { /* keep optimistic state; queued for sync */ });
+    try {
+      await toggleFavorite({
+        id: data.id,
+        title: data.title,
+        type: 'series',
+        poster_url: data.poster_url,
+        rating: data.rating,
+        seasons: data.seasons,
+        episodes: data.episodes
+      });
+      const all = await getFavorites();
+      setFav(all.some(f => f.item_id === data.id && f.item_type === 'series'));
+    } catch {
+      // leave state as-is
+    }
   };
 
   // Comments state
