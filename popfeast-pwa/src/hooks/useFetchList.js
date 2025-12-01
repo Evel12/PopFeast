@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../api/base.js';
 
 export function useFetchList(type) {
   const [data,setData] = useState([]);
@@ -7,7 +8,7 @@ export function useFetchList(type) {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch(`/api/${type}`, { headers: { 'Accept': 'application/json' } })
+    fetch(apiUrl(`/api/${type}`), { headers: { 'Accept': 'application/json' } })
       .then(r => {
         if (!r.ok) throw new Error('Gagal memuat list');
         const ct = r.headers.get('content-type') || '';

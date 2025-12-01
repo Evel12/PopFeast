@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../api/base.js';
 
 export function useFetchDetail(type, id) {
   const [data,setData] = useState(null);
@@ -7,7 +8,7 @@ export function useFetchDetail(type, id) {
   useEffect(() => {
     let active=true;
     setLoading(true);
-    const baseUrl = `/api/${type}/${id}`;
+    const baseUrl = apiUrl(`/api/${type}/${id}`);
     fetch(baseUrl, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
       .then(async r => {
         if (!r.ok) throw new Error('Gagal memuat detail');

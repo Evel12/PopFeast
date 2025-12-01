@@ -2,6 +2,7 @@
 // Adds an offline queue to sync pending toggles when back online.
 const KEY = 'popfeast_favs_cache';
 const QUEUE_KEY = 'popfeast_favs_queue';
+import { apiUrl } from '../api/base.js';
 
 function loadCache(){
   try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { return []; }
@@ -19,7 +20,7 @@ async function flushQueue(){
   const remaining = [];
   for(const item of q){
     try{
-      const res = await fetch('/api/favorites/toggle',{
+      const res = await fetch(apiUrl('/api/favorites/toggle'),{
         method:'POST',headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ item_id:item.item_id, item_type:item.item_type })
       });
@@ -41,7 +42,7 @@ if (typeof window !== 'undefined') {
 async function fetchAll(){
   const local = loadCache();
   try {
-    const res = await fetch('/api/favorites', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+    const res = await fetch(apiUrl('/api/favorites'), { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
     if(!res.ok) throw new Error('net');
     const data = await res.json();
     if(Array.isArray(data)){
@@ -75,7 +76,7 @@ export async function isFavorite(item_id, item_type){
 
 export async function toggleFavorite(item){
   try {
-    const res = await fetch('/api/favorites/toggle',{
+    const res = await fetch(apiUrl('/api/favorites/toggle'),{
       method:'POST',headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ item_id:item.id, item_type:item.type })
     });

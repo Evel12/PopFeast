@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFetchDetail } from '../hooks/useFetchDetail.js';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
+import { apiUrl } from '../api/base.js';
 
 /**
  * Series detail page
@@ -69,7 +70,7 @@ export default function SeriesDetail() {
   // Load comments
   useEffect(() => {
     setCLoading(true);
-    fetch(`/api/series/${id}/comments?__bypass=1&_ts=${Date.now()}`, {
+    fetch(apiUrl(`/api/series/${id}/comments?__bypass=1&_ts=${Date.now()}`), {
       headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' },
       cache: 'no-store'
     })
@@ -87,7 +88,7 @@ export default function SeriesDetail() {
     e.preventDefault();
     if (!content.trim()) return;
     setSubmitLoading(true);
-    fetch(`/api/series/${id}/comments`, {
+    fetch(apiUrl(`/api/series/${id}/comments`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({

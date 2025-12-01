@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
+import { apiUrl } from '../api/base.js';
 
 export default function Favorites() {
   const [favMovies, setFavMovies] = useState([]);
@@ -18,8 +19,8 @@ export default function Favorites() {
     // fetch full lists and filter to favorites
     try {
       const [moviesRes, seriesRes] = await Promise.all([
-        fetch('/api/movies', { headers: { 'Accept': 'application/json' } }),
-        fetch('/api/series', { headers: { 'Accept': 'application/json' } })
+        fetch(apiUrl('/api/movies'), { headers: { 'Accept': 'application/json' } }),
+        fetch(apiUrl('/api/series'), { headers: { 'Accept': 'application/json' } })
       ]);
       const moviesData = (moviesRes.ok && (moviesRes.headers.get('content-type')||'').includes('application/json')) ? await moviesRes.json() : [];
       const seriesData = (seriesRes.ok && (seriesRes.headers.get('content-type')||'').includes('application/json')) ? await seriesRes.json() : [];

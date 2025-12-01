@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiUrl } from '../api/base.js';
 
 function useFetchList(url){
   const [data,setData] = useState([]);
@@ -56,8 +57,8 @@ function Carousel({ items, itemType, onHoverChange }){
 }
 
 export default function Home(){
-  const { data: movies } = useFetchList('/api/movies');
-  const { data: series } = useFetchList('/api/series');
+  const { data: movies } = useFetchList(apiUrl('/api/movies'));
+  const { data: series } = useFetchList(apiUrl('/api/series'));
   const [focus, setFocus] = useState(null);
 
   // Sort lists by rating descending before slicing for carousels

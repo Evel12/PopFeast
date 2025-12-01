@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFetchDetail } from '../hooks/useFetchDetail.js';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
+import { apiUrl } from '../api/base.js';
 
 /**
  * Movie detail page
@@ -60,7 +61,7 @@ export default function MovieDetail() {
   // Load comments
   useEffect(() => {
     setCLoading(true);
-    fetch(`/api/movies/${id}/comments?__bypass=1&_ts=${Date.now()}`, {
+    fetch(apiUrl(`/api/movies/${id}/comments?__bypass=1&_ts=${Date.now()}`), {
       headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' },
       cache: 'no-store'
     })
@@ -78,7 +79,7 @@ export default function MovieDetail() {
     e.preventDefault();
     if (!content.trim()) return;
     setSubmitLoading(true);
-    fetch(`/api/movies/${id}/comments`, {
+    fetch(apiUrl(`/api/movies/${id}/comments`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({

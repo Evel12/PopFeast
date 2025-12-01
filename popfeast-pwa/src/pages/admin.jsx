@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../api/base.js';
 
 export default function Admin() {
   const [movies, setMovies] = useState([]);
@@ -23,7 +24,7 @@ export default function Admin() {
   async function loadMovies() {
     setLoadingMovies(true);
     try {
-      const r = await fetch('/api/movies');
+      const r = await fetch(apiUrl('/api/movies'));
       const j = await r.json();
       if(!r.ok) throw new Error(j.error||'Gagal memuat movies');
       setMovies(j);
@@ -32,7 +33,7 @@ export default function Admin() {
   async function loadSeries() {
     setLoadingSeries(true);
     try {
-      const r = await fetch('/api/series');
+      const r = await fetch(apiUrl('/api/series'));
       const j = await r.json();
       if(!r.ok) throw new Error(j.error||'Gagal memuat series');
       setSeries(j);
@@ -74,7 +75,7 @@ export default function Admin() {
     if(vErr){ setError(vErr); return; }
     setCreatingMovie(true); setError(''); setLastResponse('');
     try{
-      const r = await fetch(isEdit? `/api/movies/${movieForm.id}`:'/api/movies',{
+      const r = await fetch(isEdit? apiUrl(`/api/movies/${movieForm.id}`):apiUrl('/api/movies'),{
         method:isEdit?'PATCH':'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
       });
@@ -102,7 +103,7 @@ export default function Admin() {
     if(vErr){ setError(vErr); return; }
     setCreatingSeries(true); setError(''); setLastResponse('');
     try{
-      const r = await fetch(isEdit? `/api/series/${seriesForm.id}`:'/api/series',{
+      const r = await fetch(isEdit? apiUrl(`/api/series/${seriesForm.id}`):apiUrl('/api/series'),{
         method:isEdit?'PATCH':'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify(payload)
       });
@@ -117,7 +118,7 @@ export default function Admin() {
   async function deleteMovie(id){
     if(!confirm('Hapus movie ini?')) return;
     try{
-      const r = await fetch(`/api/movies/${id}`,{method:'DELETE'});
+      const r = await fetch(apiUrl(`/api/movies/${id}`),{method:'DELETE'});
       const j = await r.json();
       if(!r.ok) throw new Error(j.error||'Delete movie error');
       setMovies(m=>m.filter(x=>x.id!==id));
@@ -128,7 +129,7 @@ export default function Admin() {
   async function deleteSeries(id){
     if(!confirm('Hapus series ini?')) return;
     try{
-      const r = await fetch(`/api/series/${id}`,{method:'DELETE'});
+      const r = await fetch(apiUrl(`/api/series/${id}`),{method:'DELETE'});
       const j = await r.json();
       if(!r.ok) throw new Error(j.error||'Delete series error');
       setSeries(s=>s.filter(x=>x.id!==id));

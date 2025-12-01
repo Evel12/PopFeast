@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { apiUrl } from '../api/base.js';
 
 const SearchSortContext = createContext(null);
 
@@ -25,7 +26,7 @@ export function SearchSortProvider({ children }) {
   const [selectedGenres, setSelectedGenres] = useState([]);
 
   useEffect(()=>{
-    fetch('/api/meta/genres')
+    fetch(apiUrl('/api/meta/genres'))
       .then(r=>r.json())
       .then(j=>setAllGenres(j.genres||[]))
       .catch(()=>{});
@@ -35,8 +36,8 @@ export function SearchSortProvider({ children }) {
   useEffect(()=>{
     if (allGenres && allGenres.length) return;
     Promise.all([
-      fetch('/api/movies').then(r=>r.ok?r.json():[]).catch(()=>[]),
-      fetch('/api/series').then(r=>r.ok?r.json():[]).catch(()=>[])
+      fetch(apiUrl('/api/movies')).then(r=>r.ok?r.json():[]).catch(()=>[]),
+      fetch(apiUrl('/api/series')).then(r=>r.ok?r.json():[]).catch(()=>[])
     ]).then(([m,s])=>{
       const set = new Set();
       (Array.isArray(m)? m:[]).forEach(r => (r.genres||[]).forEach(g=>set.add(g)));
