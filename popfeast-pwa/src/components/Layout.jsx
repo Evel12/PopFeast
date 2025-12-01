@@ -52,6 +52,11 @@ export default function Layout() {
 
         </div>
       </header>
+      {import.meta.env.PROD && (
+        <div className="container" style={{padding:'6px 12px',fontSize:12,color:'#0f5132',background:'#d1e7dd',border:'1px solid #badbcc',borderLeft:'none',borderRight:'none'}}>
+          status #4978 activated and is running
+        </div>
+      )}
       {/* Desktop layout only: no subheader here */}
       {genresOpen && sort==='genres' && (
         <div className="genre-overlay" onClick={()=>setGenresOpen(false)} role="dialog" aria-modal="true">
