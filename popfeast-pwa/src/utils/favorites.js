@@ -4,6 +4,19 @@ const KEY = 'popfeast_favs_cache';
 const QUEUE_KEY = 'popfeast_favs_queue';
 import { apiUrl } from '../api/base.js';
 
+let bc;
+function notifyChanged(){
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('favorites-changed'));
+    }
+    if (!bc && typeof BroadcastChannel !== 'undefined') {
+      bc = new BroadcastChannel('popfeast-favorites');
+    }
+    if (bc) bc.postMessage({ type:'favorites-changed', ts: Date.now() });
+  } catch {}
+}
+
 function loadCache(){
   try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { return []; }
 }
@@ -47,7 +60,7 @@ async function flushQueue(){
   }
   saveQueue(remaining);
   // Avoid blocking UI; refresh cache async
-  if(remaining.length !== q.length){ fetchAll().catch(()=>{}); }
+  if(remaining.length !== q.length){ fetchAll().then(()=>notifyChanged()).catch(()=>{}); }
 }
 
 // Attempt to flush queue when back online
@@ -93,37 +106,52 @@ export async function isFavorite(item_id, item_type){
 }
 
 export async function toggleFavorite(item){
-  // Determine intended operation by current server state
-  const current = await fetchAll();
-  const exists = current.some(f=>f.item_id===item.id && f.item_type===item.type);
-  const endpoint = exists ? '/api/favorites/remove' : '/api/favorites/add';
+  // Decide target from local cache for instant feedback
+  const cache0 = loadCache();
+  const has0 = cache0.some(f=>f.item_id===item.id && f.item_type===item.type);
+  const targetAdd = !has0;
+  const endpoint = targetAdd ? '/api/favorites/add' : '/api/favorites/remove';
   const body = JSON.stringify({ item_id:item.id, item_type:item.type });
 
-  // If offline, queue and return queued
+  // Optimistic cache update
+  if (targetAdd) {
+    if (!has0) { cache0.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() }); saveCache(cache0); notifyChanged(); }
+  } else {
+    if (has0) { saveCache(cache0.filter(f=>!(f.item_id===item.id && f.item_type===item.type))); notifyChanged(); }
+  }
+
+  // Offline: queue and keep optimistic
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const queue = loadQueue();
-    queue.push({ item_id:item.id, item_type:item.type, op: exists ? 'remove' : 'add', queued_at:Date.now() });
+    queue.push({ item_id:item.id, item_type:item.type, op: targetAdd ? 'add' : 'remove', queued_at:Date.now() });
     saveQueue(queue);
     return { status: 'queued' };
   }
 
-  // Online: call API, only update cache after success
-  const res = await fetch(apiUrl(endpoint), { method:'POST', headers:{'Content-Type':'application/json','x-bypass-cache':'1','Accept':'application/json'}, body, cache:'no-store' });
-  if (!res.ok) {
-    // Do not modify local cache if server rejects
-    const errText = await res.text().catch(()=> '');
-    throw new Error(errText || 'Failed to update favorite');
+  // Online: call API; on HTTP failure revert; on network error, queue and keep optimistic
+  try {
+    const res = await fetch(apiUrl(endpoint), { method:'POST', headers:{'Content-Type':'application/json','x-bypass-cache':'1','Accept':'application/json'}, body, cache:'no-store' });
+    if (!res.ok) throw new Error('http');
+    fetchAll().then(()=>notifyChanged()).catch(()=>{});
+    return { status: targetAdd ? 'added' : 'removed' };
+  } catch (e) {
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    if (offline || e.message !== 'http') {
+      const queue = loadQueue();
+      queue.push({ item_id:item.id, item_type:item.type, op: targetAdd ? 'add' : 'remove', queued_at:Date.now() });
+      saveQueue(queue);
+      return { status: 'queued' };
+    }
+    // Revert cache on HTTP error
+    const cache1 = loadCache();
+    const has1 = cache1.some(f=>f.item_id===item.id && f.item_type===item.type);
+    if (targetAdd && has1) {
+      saveCache(cache1.filter(f=>!(f.item_id===item.id && f.item_type===item.type)));
+    } else if (!targetAdd && !has1) {
+      cache1.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
+      saveCache(cache1);
+    }
+    notifyChanged();
+    throw e;
   }
-  // Update local cache immediately for snappy UX
-  const cache = loadCache();
-  const keyIndex = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
-  if (endpoint.endsWith('/add')) {
-    if (keyIndex < 0) cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
-  } else {
-    if (keyIndex >= 0) cache.splice(keyIndex,1);
-  }
-  saveCache(cache);
-  // Background refresh from server to ensure correctness
-  fetchAll().catch(()=>{});
-  return { status: exists ? 'removed' : 'added' };
 }

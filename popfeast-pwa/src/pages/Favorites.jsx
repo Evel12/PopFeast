@@ -62,6 +62,28 @@ export default function Favorites() {
     reload();
   }, []);
 
+  // React to favorites changes from other views/tabs
+  useEffect(() => {
+    let t;
+    const onChanged = () => {
+      clearTimeout(t);
+      t = setTimeout(() => { reload(); }, 120);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('favorites-changed', onChanged);
+    }
+    let bc;
+    if (typeof BroadcastChannel !== 'undefined') {
+      bc = new BroadcastChannel('popfeast-favorites');
+      bc.onmessage = (e) => { if (e?.data?.type === 'favorites-changed') onChanged(); };
+    }
+    return () => {
+      if (typeof window !== 'undefined') window.removeEventListener('favorites-changed', onChanged);
+      if (bc) bc.close();
+      clearTimeout(t);
+    };
+  }, []);
+
   useEffect(() => {
     setPage(1);
   }, [view]);
