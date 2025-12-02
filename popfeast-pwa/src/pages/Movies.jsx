@@ -69,10 +69,8 @@ export default function Movies() {
       rating: movie.rating,
       year: movie.year,
       duration_minutes: movie.duration_minutes
-    }).then(async () => {
-      const all = await getFavorites();
-      const set = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
-      setFavSet(set);
+    }).then(() => {
+      // Already updated locally; background refresh happens in utils
     }).catch(() => {
       // Revert on failure
       setFavSet(prev => { const next = new Set(prev); if (wasFav) next.add(movie.id); else next.delete(movie.id); return next; });

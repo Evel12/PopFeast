@@ -12,19 +12,27 @@ export default function Favorites() {
 
   const reload = async () => {
     // get favorite id/type pairs
-    const all = await getFavorites();
-    const movieIds = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
-    const seriesIds = new Set(all.filter(f=>f.item_type==='series').map(f=>f.item_id));
+    const all = await getFavorites(true);
+    const moviesFavs = all.filter(f=>f.item_type==='movie').map(f=>f.item_id);
+    const seriesFavs = all.filter(f=>f.item_type==='series').map(f=>f.item_id);
 
-    // fetch full lists and filter to favorites
+    const fetchDetails = async (type, ids) => {
+      const limit = 6;
+      const out = [];
+      for (let i=0; i<ids.length; i+=limit) {
+        const chunk = ids.slice(i, i+limit);
+        const results = await Promise.allSettled(chunk.map(id => fetch(apiUrl(`/api/${type}/${id}`), { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null)));
+        results.forEach(r => { if (r.status==='fulfilled' && r.value) out.push(r.value); });
+      }
+      return out;
+    };
+
     try {
-      const [moviesRes, seriesRes] = await Promise.all([
-        fetch(apiUrl('/api/movies'), { headers: { 'Accept': 'application/json' } }),
-        fetch(apiUrl('/api/series'), { headers: { 'Accept': 'application/json' } })
+      const [moviesData, seriesData] = await Promise.all([
+        fetchDetails('movies', moviesFavs),
+        fetchDetails('series', seriesFavs)
       ]);
-      const moviesData = (moviesRes.ok && (moviesRes.headers.get('content-type')||'').includes('application/json')) ? await moviesRes.json() : [];
-      const seriesData = (seriesRes.ok && (seriesRes.headers.get('content-type')||'').includes('application/json')) ? await seriesRes.json() : [];
-      setFavMovies(moviesData.filter(m=>movieIds.has(m.id)).map(m=>({
+      setFavMovies(moviesData.map(m=>({
         id: m.id,
         type: 'movie',
         title: m.title,
@@ -34,7 +42,7 @@ export default function Favorites() {
         duration_minutes: m.duration_minutes,
         year: m.year
       })));
-      setFavSeries(seriesData.filter(s=>seriesIds.has(s.id)).map(s=>({
+      setFavSeries(seriesData.map(s=>({
         id: s.id,
         type: 'series',
         title: s.title,
@@ -44,8 +52,7 @@ export default function Favorites() {
         seasons: s.seasons,
         episodes: s.episodes
       })));
-    } catch (e) {
-      // Fallback: empty lists if fetch fails
+    } catch {
       setFavMovies([]);
       setFavSeries([]);
     }

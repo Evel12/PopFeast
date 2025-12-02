@@ -68,10 +68,8 @@ export default function Series() {
       rating: series.rating,
       seasons: series.seasons,
       episodes: series.episodes
-    }).then(async () => {
-      const all = await getFavorites();
-      const set = new Set(all.filter(f=>f.item_type==='series').map(f=>f.item_id));
-      setFavSet(set);
+    }).then(() => {
+      // Local state already flipped; background refresh will sync cache
     }).catch(() => {
       setFavSet(prev => { const next = new Set(prev); if (wasFav) next.add(series.id); else next.delete(series.id); return next; });
     }).finally(() => {

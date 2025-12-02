@@ -114,7 +114,16 @@ export async function toggleFavorite(item){
     const errText = await res.text().catch(()=> '');
     throw new Error(errText || 'Failed to update favorite');
   }
-  // Refresh from server to be exact
-  const latest = await fetchAll();
-  return { status: exists ? 'removed' : 'added', data: latest };
+  // Update local cache immediately for snappy UX
+  const cache = loadCache();
+  const keyIndex = cache.findIndex(f=>f.item_id===item.id && f.item_type===item.type);
+  if (endpoint.endsWith('/add')) {
+    if (keyIndex < 0) cache.push({ item_id:item.id, item_type:item.type, created_at:new Date().toISOString() });
+  } else {
+    if (keyIndex >= 0) cache.splice(keyIndex,1);
+  }
+  saveCache(cache);
+  // Background refresh from server to ensure correctness
+  fetchAll().catch(()=>{});
+  return { status: exists ? 'removed' : 'added' };
 }
