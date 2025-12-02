@@ -19,19 +19,54 @@ export default function Favorites() {
     const fetchDetails = async (type, ids) => {
       const limit = 6;
       const out = [];
+      let hadError = false;
       for (let i=0; i<ids.length; i+=limit) {
         const chunk = ids.slice(i, i+limit);
-        const results = await Promise.allSettled(chunk.map(id => fetch(apiUrl(`/api/${type}/${id}`), { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null)));
-        results.forEach(r => { if (r.status==='fulfilled' && r.value) out.push(r.value); });
+        const results = await Promise.allSettled(
+          chunk.map(id => fetch(apiUrl(`/api/${type}/${id}`), { headers: { 'Accept': 'application/json' } })
+            .then(r => r.ok && (r.headers.get('content-type')||'').includes('application/json') ? r.json() : null))
+        );
+        results.forEach(r => {
+          if (r.status==='fulfilled' && r.value) out.push(r.value); else hadError = true;
+        });
       }
-      return out;
+      return { out, hadError };
+    };
+
+    const fallbackFromList = async (type, ids) => {
+      try {
+        const res = await fetch(apiUrl(`/api/${type}`), { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error('net');
+        const data = await res.json();
+        const set = new Set(ids);
+        return (Array.isArray(data) ? data : []).filter(x => set.has(x.id));
+      } catch {
+        return [];
+      }
     };
 
     try {
-      const [moviesData, seriesData] = await Promise.all([
+      const [moviesRes, seriesRes] = await Promise.all([
         fetchDetails('movies', moviesFavs),
         fetchDetails('series', seriesFavs)
       ]);
+
+      let moviesData = moviesRes.out;
+      let seriesData = seriesRes.out;
+
+      // If offline or some details missing, fallback to cached lists (SW pre-warms /api/movies,/api/series)
+      if ((moviesRes.hadError || moviesData.length < moviesFavs.length) && moviesFavs.length) {
+        const fb = await fallbackFromList('movies', moviesFavs);
+        // Merge unique by id
+        const map = new Map([...moviesData, ...fb].map(m => [m.id, m]));
+        moviesData = Array.from(map.values());
+      }
+      if ((seriesRes.hadError || seriesData.length < seriesFavs.length) && seriesFavs.length) {
+        const fb = await fallbackFromList('series', seriesFavs);
+        const map = new Map([...seriesData, ...fb].map(s => [s.id, s]));
+        seriesData = Array.from(map.values());
+      }
+
       setFavMovies(moviesData.map(m=>({
         id: m.id,
         type: 'movie',
@@ -42,17 +77,20 @@ export default function Favorites() {
         duration_minutes: m.duration_minutes,
         year: m.year
       })));
-      setFavSeries(seriesData.map(s=>({
-        id: s.id,
-        type: 'series',
-        title: s.title,
-        poster_url: s.poster_url,
-        rating: (s.average_rating ?? s.avg_rating ?? s.rating ?? 0),
-        genres: s.genres,
-        seasons: s.seasons,
-        episodes: s.episodes
-      })));
+      setFavSeries(seriesData.map(s=>(
+        {
+          id: s.id,
+          type: 'series',
+          title: s.title,
+          poster_url: s.poster_url,
+          rating: (s.average_rating ?? s.avg_rating ?? s.rating ?? 0),
+          genres: s.genres,
+          seasons: s.seasons,
+          episodes: s.episodes
+        }
+      )));
     } catch {
+      // Final fallback: empty lists
       setFavMovies([]);
       setFavSeries([]);
     }
