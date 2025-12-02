@@ -57,7 +57,9 @@ export default function Series() {
     e.stopPropagation();
     if (pending.has(series.id)) return;
     setPending(prev => new Set(prev).add(series.id));
-    // Server-confirmed update
+    // Optimistic flip; reconcile on response
+    const wasFav = favSet.has(series.id);
+    setFavSet(prev => { const next = new Set(prev); if (wasFav) next.delete(series.id); else next.add(series.id); return next; });
     toggleFavorite({
       id: series.id,
       title: series.title,
@@ -71,7 +73,7 @@ export default function Series() {
       const set = new Set(all.filter(f=>f.item_type==='series').map(f=>f.item_id));
       setFavSet(set);
     }).catch(() => {
-      // Failure leaves UI unchanged until next refresh (server truth)
+      setFavSet(prev => { const next = new Set(prev); if (wasFav) next.add(series.id); else next.delete(series.id); return next; });
     }).finally(() => {
       setPending(prev => { const next = new Set(prev); next.delete(series.id); return next; });
     });

@@ -34,6 +34,8 @@ export default function SeriesDetail() {
 
   const handleFav = async () => {
     if (!data) return;
+    const was = fav;
+    setFav(!was);
     try {
       await toggleFavorite({
         id: data.id,
@@ -47,7 +49,7 @@ export default function SeriesDetail() {
       const all = await getFavorites();
       setFav(all.some(f => f.item_id === data.id && f.item_type === 'series'));
     } catch {
-      // leave state as-is
+      setFav(was);
     }
   };
 
@@ -62,9 +64,8 @@ export default function SeriesDetail() {
   // Load comments
   useEffect(() => {
     setCLoading(true);
-    fetch(apiUrl(`/api/series/${id}/comments?__bypass=1&_ts=${Date.now()}`), {
-      headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' },
-      cache: 'no-store'
+    fetch(apiUrl(`/api/series/${id}/comments`), {
+      headers: { 'Accept': 'application/json' }
     })
       .then(async r => {
         if (!r.ok) throw new Error('net');

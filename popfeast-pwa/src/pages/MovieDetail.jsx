@@ -35,6 +35,8 @@ export default function MovieDetail() {
 
   const handleFav = async () => {
     if (!data) return;
+    const was = fav;
+    setFav(!was);
     try {
       await toggleFavorite({
       id: data.id,
@@ -48,7 +50,7 @@ export default function MovieDetail() {
       const all = await getFavorites();
       setFav(all.some(f => f.item_id === data.id && f.item_type === 'movie'));
     } catch {
-      // No change on failure; server is source of truth
+      setFav(was); // revert on failure
     }
   };
 
@@ -63,9 +65,8 @@ export default function MovieDetail() {
   // Load comments
   useEffect(() => {
     setCLoading(true);
-    fetch(apiUrl(`/api/movies/${id}/comments?__bypass=1&_ts=${Date.now()}`), {
-      headers: { 'Accept': 'application/json', 'x-bypass-cache': '1' },
-      cache: 'no-store'
+    fetch(apiUrl(`/api/movies/${id}/comments`), {
+      headers: { 'Accept': 'application/json' }
     })
       .then(async r => {
         if (!r.ok) throw new Error('net');

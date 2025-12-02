@@ -84,10 +84,11 @@ self.addEventListener("fetch", event => {
     event.respondWith((async () => {
       if (request.method === 'GET') {
         const isDetail = /^\/api\/(movies|series)\/[0-9a-fA-F-]+$/.test(url.pathname);
+        const isComments = /^\/api\/(movies|series)\/[0-9a-fA-F-]+\/comments$/.test(url.pathname);
         const isFavorites = url.pathname === '/api/favorites';
         // Detail endpoints: cache-first with background refresh for offline support;
         // if bypass flag is present, do network-first
-        if (isDetail) {
+        if (isDetail || isComments) {
           const cache = await caches.open(CACHE_NAME);
           const cached = await cache.match(request);
           if (cached && !bypass) {

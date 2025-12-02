@@ -58,7 +58,9 @@ export default function Movies() {
     e.stopPropagation();
     if (pending.has(movie.id)) return; // prevent spamming/races
     setPending(prev => new Set(prev).add(movie.id));
-    // Server-confirmed update: call API then refresh favorites
+    // Optimistic flip for snappy UX; reconcile with server
+    const wasFav = favSet.has(movie.id);
+    setFavSet(prev => { const next = new Set(prev); if (wasFav) next.delete(movie.id); else next.add(movie.id); return next; });
     toggleFavorite({
       id: movie.id,
       title: movie.title,
@@ -72,7 +74,8 @@ export default function Movies() {
       const set = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
       setFavSet(set);
     }).catch(() => {
-      // On failure, leave as-is (DB is source of truth)
+      // Revert on failure
+      setFavSet(prev => { const next = new Set(prev); if (wasFav) next.add(movie.id); else next.delete(movie.id); return next; });
     }).finally(() => {
       setPending(prev => { const next = new Set(prev); next.delete(movie.id); return next; });
     });
