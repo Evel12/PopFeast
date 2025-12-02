@@ -110,7 +110,6 @@ export default function Favorites() {
       <div className="media-body">
         <h3 className="card-title">{f.title}</h3>
         <div className="card-meta">
-          <div className="meta-chip">{f.type}</div>
           {f.type === 'movie' && f.duration_minutes && <div className="meta-chip">{f.duration_minutes} min</div>}
           {f.type === 'movie' && f.year && <div className="meta-chip">{f.year}</div>}
           {f.type === 'series' && f.seasons != null && <div className="meta-chip">{f.seasons} seasons</div>}

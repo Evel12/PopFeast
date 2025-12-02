@@ -1,4 +1,4 @@
-const CACHE_NAME = "popfeast-cache-v5";
+const CACHE_NAME = "popfeast-cache-v6";
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -85,18 +85,26 @@ self.addEventListener("fetch", event => {
       if (request.method === 'GET') {
         const isDetail = /^\/api\/(movies|series)\/[0-9a-fA-F-]+$/.test(url.pathname);
         const isFavorites = url.pathname === '/api/favorites';
-        // Detail endpoints or explicit bypass: network-first to reflect DB immediately
-        if (bypass || isDetail) {
+        // Detail endpoints: cache-first with background refresh for offline support;
+        // if bypass flag is present, do network-first
+        if (isDetail) {
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match(request);
+          if (cached && !bypass) {
+            // Refresh in background
+            fetch(request).then(res => {
+              const ct = res.headers.get('content-type') || '';
+              if (res.ok && ct.includes('application/json')) cache.put(request, res.clone());
+            }).catch(()=>{});
+            return cached;
+          }
           try {
             const res = await fetch(request);
             const ct = res.headers.get('content-type') || '';
-            if (isDetail && res.ok && ct.includes('application/json')) {
-              // Cache successful detail JSON for offline revisit
-              const cache = await caches.open(CACHE_NAME);
-              cache.put(request, res.clone());
-            }
+            if (res.ok && ct.includes('application/json')) cache.put(request, res.clone());
             return res;
           } catch {
+            if (cached) return cached; // serve cached when offline
             return new Response(JSON.stringify({ error: 'offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
           }
         }
