@@ -55,8 +55,16 @@ if (typeof window !== 'undefined') {
   window.addEventListener('online', () => { flushQueue(); });
 }
 
-async function fetchAll(){
+async function fetchAll(preferCache=false){
   const local = loadCache();
+  if (preferCache && Array.isArray(local) && local.length) {
+    // Kick off a background refresh but return cached immediately
+    fetch(apiUrl('/api/favorites?__bypass=1&_ts='+Date.now()), { headers: { 'Accept': 'application/json', 'x-bypass-cache':'1' }, cache: 'no-store' })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => { if (Array.isArray(data)) saveCache(data); })
+      .catch(()=>{});
+    return local;
+  }
   try {
     const res = await fetch(apiUrl('/api/favorites?__bypass=1&_ts='+Date.now()), { headers: { 'Accept': 'application/json', 'x-bypass-cache':'1' }, cache: 'no-store' });
     if(!res.ok) throw new Error('net');
@@ -70,8 +78,8 @@ async function fetchAll(){
   return local;
 }
 
-export async function getFavorites(){
-  return fetchAll();
+export async function getFavorites(preferCache=false){
+  return fetchAll(preferCache);
 }
 
 export async function getFavoritesByType(type){

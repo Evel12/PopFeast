@@ -13,7 +13,7 @@ export default function Movies() {
 
   useEffect(() => {
     const loadFavs = async () => {
-      const all = await getFavorites();
+      const all = await getFavorites(true);
       const set = new Set(all.filter(f=>f.item_type==='movie').map(f=>f.item_id));
       setFavSet(set);
     };

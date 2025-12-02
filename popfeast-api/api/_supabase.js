@@ -2,8 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
-export const MOCK_MODE = !SUPABASE_URL || !SUPABASE_KEY;
-export const supabase = (!MOCK_MODE) ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+// Only allow mock mode when explicitly enabled via env
+export const MOCK_MODE = process.env.MOCK_MODE === '1';
+export const supabase = (!MOCK_MODE && SUPABASE_URL && SUPABASE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 export const mockData = {
   movies: [

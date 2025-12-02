@@ -5,8 +5,9 @@ export default async function handler(req, res){
   if (applyCors(req, res)) return;
   res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method === 'GET'){
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 'no-store');
     if(MOCK_MODE){ return res.status(200).json(mockData.movies); }
+    if(!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     const { data, error } = await supabase
       .from('movies')
       .select('id,title,year,genres,rating,poster_url,duration_minutes,description,created_at')
