@@ -10,8 +10,11 @@ app.use(express.json());
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const MOCK_MODE = !SUPABASE_URL || !SUPABASE_SERVICE_KEY;
-const supabase = (!MOCK_MODE) ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : null;
+// Explicit mock mode only when set: MOCK_MODE=1
+const MOCK_MODE = process.env.MOCK_MODE === '1';
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_KEY && !MOCK_MODE)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  : null;
 const norm = v => v === '' ? null : v;
 const parseGenres = input => {
   if (Array.isArray(input)) return input.map(s => String(s).trim()).filter(Boolean);
@@ -51,6 +54,7 @@ app.get('/api/meta/genres', async (_req,res)=>{
 
 app.get('/api/movies', async (_req, res) => {
   if (MOCK_MODE) return res.json(mockData.movies);
+  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const { data, error } = await supabase
     .from('movies')
     .select('id,title,year,genres,rating,poster_url,duration_minutes,description,created_at')
@@ -102,6 +106,7 @@ app.delete('/api/movies/:id', async (req,res)=>{
 
 app.get('/api/series', async (_req, res) => {
   if (MOCK_MODE) return res.json(mockData.series);
+  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const { data, error } = await supabase
     .from('series')
     .select('id,title,seasons,episodes,genres,rating,poster_url,description,created_at')
@@ -302,6 +307,7 @@ app.get('/api/search', async (req,res)=>{
 // Favorites endpoints
 app.get('/api/favorites', async (_req,res)=>{
   if (MOCK_MODE) return res.json(mockData.favorites);
+  if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
   const { data, error } = await supabase.from('favorites').select('item_id,item_type,created_at');
   if(error) return res.status(500).json({error:error.message});
   res.json(data);
@@ -335,6 +341,8 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, ()=>{
   console.log('API berjalan di port', PORT);
   if (MOCK_MODE) {
-    console.log('[API] Running in MOCK mode. Set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env to use Supabase.');
+    console.log('[API] Running in MOCK mode. Set MOCK_MODE=0 (unset) to use Supabase.');
+  } else if (!supabase) {
+    console.log('[API] Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env');
   }
 });
