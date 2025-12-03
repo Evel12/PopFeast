@@ -50,6 +50,7 @@ app.get('/api/meta/genres', async (_req,res)=>{
 });
 
 app.get('/api/movies', async (_req, res) => {
+  res.setHeader('Cache-Control','no-store');
   if (MOCK_MODE) return res.json(mockData.movies);
   const { data, error } = await supabase
     .from('movies')
@@ -101,6 +102,7 @@ app.delete('/api/movies/:id', async (req,res)=>{
 });
 
 app.get('/api/series', async (_req, res) => {
+  res.setHeader('Cache-Control','no-store');
   if (MOCK_MODE) return res.json(mockData.series);
   const { data, error } = await supabase
     .from('series')
