@@ -7,7 +7,7 @@ export default async function handler(req, res){
   if(req.method !== 'GET') return res.status(405).json({error:'method not allowed'});
   // Favorites must reflect immediate user actions; avoid CDN caching
   res.setHeader('Cache-Control', 'no-store');
-  if(MOCK_MODE) return res.status(200).json(mockData.favorites);
+  
   const { data, error } = await supabase.from('favorites').select('item_id,item_type,created_at');
   if(error) return res.status(500).json({error:error.message});
   return res.status(200).json(data);

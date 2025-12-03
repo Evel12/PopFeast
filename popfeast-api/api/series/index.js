@@ -1,4 +1,4 @@
-import { supabase, MOCK_MODE, mockData, parseJson } from '../_supabase.js';
+import { supabase, parseJson } from '../_supabase.js';
 import { applyCors } from '../_cors.js';
 
 export default async function handler(req, res){
@@ -6,7 +6,6 @@ export default async function handler(req, res){
   res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method === 'GET'){
     res.setHeader('Cache-Control', 'no-store');
-    if(MOCK_MODE){ return res.status(200).json(mockData.series); }
     if(!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     const { data, error } = await supabase
       .from('series')
@@ -29,7 +28,6 @@ export default async function handler(req, res){
       rating: rating!=='' && rating!=null? Number(rating):null,
       poster_url: poster_url ?? null
     };
-    if(MOCK_MODE){ const itm={ id:'s'+Date.now(), ...insertObj, created_at:new Date().toISOString() }; mockData.series.push(itm); return res.status(200).json(itm); }
     const { data, error } = await supabase.from('series').insert(insertObj).select().single();
     if(error) return res.status(500).json({error:error.message});
     return res.status(200).json(data);

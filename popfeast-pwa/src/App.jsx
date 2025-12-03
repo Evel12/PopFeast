@@ -10,7 +10,7 @@ import Favorites from './pages/Favorites.jsx';
 import Profile from './pages/Profile.jsx';
 import Admin from './pages/admin.jsx';
 import Home from './pages/Home.jsx';
-import { SearchSortProvider } from './context/SearchSortContext.jsx';
+import { SearchSortProvider } from './utils/search.jsx';
 import './index.css';
 import './App.css';
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useFetchList } from '../hooks/useFetchList.js';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
-import { useSearchSort } from '../context/SearchSortContext.jsx';
+import { useSearchSort } from '../utils/search.jsx';
 
 export default function Series() {
   const { data, loading, error } = useFetchList('series');

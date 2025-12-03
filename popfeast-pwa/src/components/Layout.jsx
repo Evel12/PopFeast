@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import BottomNav from './BottomNav.jsx';
-import { useSearchSort } from '../context/SearchSortContext.jsx';
+import { useSearchSort } from '../utils/search.jsx';
 
 export default function Layout() {
   const loc = useLocation();
