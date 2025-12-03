@@ -225,7 +225,7 @@ export default function MovieDetail() {
                     {new Date(c.created_at).toLocaleString()}
                   </span>
                   <div className="comment-rating">
-                    <strong>{Number(c.rating).toFixed(1)}</strong>/10
+                    <strong>⭐{Number(c.rating).toFixed(1)}</strong>/10
                   </div>
                 </div>
                 <div className="comment-text">{c.content}</div>

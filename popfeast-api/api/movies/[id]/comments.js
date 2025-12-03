@@ -19,14 +19,6 @@ export default async function handler(req,res){
       item_id:id,item_type:'movie',rating:Number(rating),content:String(content),user_id:null,username: username ? String(username).slice(0,40) : null
     }).select().single();
     if(insert.error) return res.status(500).json({error:insert.error.message});
-    const avgQ = await supabase.from('comments').select('rating').eq('item_id',id).eq('item_type','movie');
-    if(!avgQ.error){
-      const ratings = (avgQ.data||[]).map(r=>r.rating).filter(r=>typeof r==='number');
-      if(ratings.length){
-        const avg = ratings.reduce((a,v)=>a+v,0)/ratings.length;
-        await supabase.from('movies').update({rating: Number(avg.toFixed(1))}).eq('id',id);
-      }
-    }
     return res.status(200).json(insert.data);
   }
   return res.status(405).json({error:'method not allowed'});
