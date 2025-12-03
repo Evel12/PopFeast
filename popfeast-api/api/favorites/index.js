@@ -1,4 +1,4 @@
-import { supabase, MOCK_MODE, mockData } from '../_supabase.js';
+import { supabase } from '../_supabase.js';
 import { applyCors } from '../_cors.js';
 
 export default async function handler(req, res){
