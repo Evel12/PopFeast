@@ -8,9 +8,13 @@ export default function Movies() {
   const { data, loading, error } = useFetchList('movies');
   const [favSet, setFavSet] = useState(new Set());
   const [pending, setPending] = useState(new Set());
-  const { query, sort, order, selectedGenres } = useSearchSort();
+  const { query, sort, order, selectedGenres, allGenres, setSort, setOrder, toggleGenre, clearGenres } = useSearchSort();
   const [page, setPage] = useState(1);
   const pageSize = 4;
+  const [ratingMin, setRatingMin] = useState('');
+  const [ratingMax, setRatingMax] = useState('');
+  const [yearMin, setYearMin] = useState('');
+  const [yearMax, setYearMax] = useState('');
   
 
   useEffect(() => {
@@ -34,6 +38,10 @@ export default function Movies() {
         return selectedGenres.every(sel => gs.includes(sel));
       });
     }
+    if (ratingMin !== '') list = list.filter(m => (m.rating ?? -Infinity) >= Number(ratingMin));
+    if (ratingMax !== '') list = list.filter(m => (m.rating ?? Infinity) <= Number(ratingMax));
+    if (yearMin !== '') list = list.filter(m => (m.year ?? -Infinity) >= Number(yearMin));
+    if (yearMax !== '') list = list.filter(m => (m.year ?? Infinity) <= Number(yearMax));
     const asc = order === 'asc';
     list = [...list].sort((a, b) => {
       const getVal = (obj) => {
@@ -53,9 +61,9 @@ export default function Movies() {
       return 0;
     });
     return list;
-  }, [data, query, sort, order, selectedGenres]);
+  }, [data, query, sort, order, selectedGenres, ratingMin, ratingMax, yearMin, yearMax]);
 
-  useEffect(()=>{ setPage(1); }, [query, sort, order, selectedGenres]);
+  useEffect(()=>{ setPage(1); }, [query, sort, order, selectedGenres, ratingMin, ratingMax, yearMin, yearMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
   const paged = useMemo(() => {
@@ -92,6 +100,50 @@ export default function Movies() {
   return (
     <section className="section">
       <h2 style={{marginTop:0}}>Movies</h2>
+      <div className="filters-panel form-panel" style={{marginBottom:12}}>
+        <div className="form-fields" style={{display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:12}}>
+          <div>
+            <label className="form-field">Genres</label>
+            <div className="chips" style={{display:'flex', flexWrap:'wrap', gap:8}}>
+              {allGenres.map(g => (
+                <button key={g} type="button" className={`meta-chip ${selectedGenres.includes(g)?'active':''}`} onClick={()=>toggleGenre(g)}>{g}</button>
+              ))}
+              {allGenres.length===0 && <span className="muted">Tidak ada genres</span>}
+            </div>
+            {selectedGenres.length>0 && <button type="button" className="btn-mini" style={{marginTop:8}} onClick={clearGenres}>Clear Genres</button>}
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap:8}}>
+            <label className="form-field">Rating Min
+              <input className="form-input" type="number" step="0.1" value={ratingMin} onChange={e=>setRatingMin(e.target.value)} />
+            </label>
+            <label className="form-field">Rating Max
+              <input className="form-input" type="number" step="0.1" value={ratingMax} onChange={e=>setRatingMax(e.target.value)} />
+            </label>
+            <label className="form-field">Year Min
+              <input className="form-input" type="number" value={yearMin} onChange={e=>setYearMin(e.target.value)} />
+            </label>
+            <label className="form-field">Year Max
+              <input className="form-input" type="number" value={yearMax} onChange={e=>setYearMax(e.target.value)} />
+            </label>
+          </div>
+          <div>
+            <label className="form-field">Sort
+              <select className="form-input" value={sort} onChange={e=>setSort(e.target.value)}>
+                <option value="rating">Rating</option>
+                <option value="year">Release Year</option>
+                <option value="duration_minutes">Duration</option>
+                <option value="title">Title</option>
+              </select>
+            </label>
+            <label className="form-field">Order
+              <select className="form-input" value={order} onChange={e=>setOrder(e.target.value)}>
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
       {loading && (
         <div className="media-grid">
           {Array.from({ length: 6 }).map((_, i) => (
