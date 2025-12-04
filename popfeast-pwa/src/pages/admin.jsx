@@ -234,71 +234,7 @@ export default function Admin() {
         <button className={`tab ${tab==='movies'?'active':''}`} onClick={()=>setTab('movies')}>Movies</button>
         <button className={`tab ${tab==='series'?'active':''}`} onClick={()=>setTab('series')}>Series</button>
       </div>
-      <div className="filters-panel form-panel" style={{marginBottom:16}}>
-        <h4>Filter</h4>
-        <div className="form-fields" style={{display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:12}}>
-          <div>
-            <label className="form-field">Genres</label>
-            <div className="chips" style={{display:'flex', flexWrap:'wrap', gap:8}}>
-              {allGenres.map(g=> (
-                <button key={g} type="button" className={`meta-chip ${selectedGenres.includes(g)?'active':''}`} onClick={()=>toggleGenre(g)}>{g}</button>
-              ))}
-              {allGenres.length===0 && <span className="muted">Tidak ada genres</span>}
-            </div>
-            {selectedGenres.length>0 && <button type="button" className="btn-mini" style={{marginTop:8}} onClick={clearGenres}>Clear Genres</button>}
-          </div>
-          {tab==='movies' ? (
-            <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap:8}}>
-              <label className="form-field">Rating Min
-                <input className="form-input" type="number" step="0.1" name="ratingMin" value={movieFilters.ratingMin} onChange={onMovieFilterChange} />
-              </label>
-              <label className="form-field">Rating Max
-                <input className="form-input" type="number" step="0.1" name="ratingMax" value={movieFilters.ratingMax} onChange={onMovieFilterChange} />
-              </label>
-              <label className="form-field">Year Min
-                <input className="form-input" type="number" name="yearMin" value={movieFilters.yearMin} onChange={onMovieFilterChange} />
-              </label>
-              <label className="form-field">Year Max
-                <input className="form-input" type="number" name="yearMax" value={movieFilters.yearMax} onChange={onMovieFilterChange} />
-              </label>
-              <label className="form-field">Duration Min
-                <input className="form-input" type="number" name="durMin" value={movieFilters.durMin} onChange={onMovieFilterChange} />
-              </label>
-              <label className="form-field">Duration Max
-                <input className="form-input" type="number" name="durMax" value={movieFilters.durMax} onChange={onMovieFilterChange} />
-              </label>
-            </div>
-          ) : (
-            <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap:8}}>
-              <label className="form-field">Rating Min
-                <input className="form-input" type="number" step="0.1" name="ratingMin" value={seriesFilters.ratingMin} onChange={onSeriesFilterChange} />
-              </label>
-              <label className="form-field">Rating Max
-                <input className="form-input" type="number" step="0.1" name="ratingMax" value={seriesFilters.ratingMax} onChange={onSeriesFilterChange} />
-              </label>
-              <label className="form-field">Seasons Min
-                <input className="form-input" type="number" name="seasonsMin" value={seriesFilters.seasonsMin} onChange={onSeriesFilterChange} />
-              </label>
-              <label className="form-field">Seasons Max
-                <input className="form-input" type="number" name="seasonsMax" value={seriesFilters.seasonsMax} onChange={onSeriesFilterChange} />
-              </label>
-              <label className="form-field">Episodes Min
-                <input className="form-input" type="number" name="epsMin" value={seriesFilters.epsMin} onChange={onSeriesFilterChange} />
-              </label>
-              <label className="form-field">Episodes Max
-                <input className="form-input" type="number" name="epsMax" value={seriesFilters.epsMax} onChange={onSeriesFilterChange} />
-              </label>
-            </div>
-          )}
-          <div>
-            <label className="form-field">Page Size
-              <select className="form-input" value={pageSize} onChange={onPageSizeChange}>
-                {[4,8,12,16,20,24].map(n=> <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-          </div>
-        </div>
-      </div>
+      {/* Admin filters removed per request; admin focuses on CRUD, not browsing */}
 
       <div className="admin-grid">
         <div className="form-panel">
@@ -368,11 +304,7 @@ export default function Admin() {
             })}
             {(!loadingMovies && filteredMovies.length===0) && <p className="muted">Tidak ada movie sesuai filter.</p>}
           </div>
-          <div className="pager" style={{marginTop:12}}>
-            <button className="pager-btn" disabled={moviePage<=1} onClick={()=>setMoviePage(Math.max(1,moviePage-1))}>Prev</button>
-            <span className="pager-info">Page {moviePage} / {movieTotalPages}</span>
-            <button className="pager-btn" disabled={moviePage>=movieTotalPages} onClick={()=>setMoviePage(Math.min(movieTotalPages,moviePage+1))}>Next</button>
-          </div>
+          {/* Pagination removed on admin per request */}
         </div>
         )}
 
@@ -443,11 +375,7 @@ export default function Admin() {
             })}
             {(!loadingSeries && filteredSeries.length===0) && <p className="muted">Tidak ada series sesuai filter.</p>}
           </div>
-          <div className="pager" style={{marginTop:12}}>
-            <button className="pager-btn" disabled={seriesPage<=1} onClick={()=>setSeriesPage(Math.max(1,seriesPage-1))}>Prev</button>
-            <span className="pager-info">Page {seriesPage} / {seriesTotalPages}</span>
-            <button className="pager-btn" disabled={seriesPage>=seriesTotalPages} onClick={()=>setSeriesPage(Math.min(seriesTotalPages,seriesPage+1))}>Next</button>
-          </div>
+          {/* Pagination removed on admin per request */}
         </div>
         )}
 

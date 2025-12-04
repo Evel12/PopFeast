@@ -9,6 +9,8 @@ export default function Movies() {
   const [favSet, setFavSet] = useState(new Set());
   const [pending, setPending] = useState(new Set());
   const { query, sort, order, selectedGenres } = useSearchSort();
+  const [page, setPage] = useState(1);
+  const pageSize = 4;
   
 
   useEffect(() => {
@@ -52,6 +54,14 @@ export default function Movies() {
     });
     return list;
   }, [data, query, sort, order, selectedGenres]);
+
+  useEffect(()=>{ setPage(1); }, [query, sort, order, selectedGenres]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSorted.slice(start, start + pageSize);
+  }, [filteredSorted, page, pageSize]);
 
   const handleToggle = async (movie, e) => {
     e.preventDefault();
@@ -97,8 +107,9 @@ export default function Movies() {
       )}
       {error && <p className="muted">Error: {error}</p>}
       {!loading && !error && (
+        <>
         <div className="media-grid">
-          {filteredSorted.map(m => {
+          {paged.map(m => {
             const poster = m.poster_url;
             const fav = favSet.has(m.id);
             const genres = (m.genres || []).slice(0,2);
@@ -136,6 +147,14 @@ export default function Movies() {
             );
           })}
         </div>
+        {filteredSorted.length > pageSize && (
+          <div className="pager">
+            <button className="pager-btn" disabled={page<=1} onClick={()=>setPage(Math.max(1,page-1))}>Prev</button>
+            <span className="pager-info">Page {page} / {totalPages}</span>
+            <button className="pager-btn" disabled={page>=totalPages} onClick={()=>setPage(Math.min(totalPages,page+1))}>Next</button>
+          </div>
+        )}
+        </>
       )}
     </section>
   );

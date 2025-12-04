@@ -9,6 +9,8 @@ export default function Series() {
   const [favSet, setFavSet] = useState(new Set());
   const [pending, setPending] = useState(new Set());
   const { query, sort, order, selectedGenres } = useSearchSort();
+  const [page, setPage] = useState(1);
+  const pageSize = 4;
 
   useEffect(() => {
     const loadFavs = async () => {
@@ -51,6 +53,14 @@ export default function Series() {
     });
     return list;
   }, [data, query, sort, order, selectedGenres]);
+
+  useEffect(()=>{ setPage(1); }, [query, sort, order, selectedGenres]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSorted.slice(start, start + pageSize);
+  }, [filteredSorted, page, pageSize]);
 
   const handleToggle = async (series, e) => {
     e.preventDefault();
@@ -96,7 +106,7 @@ export default function Series() {
       {error && <p className="muted">Error: {error}</p>}
       {!loading && !error && (
         <div className="media-grid">
-          {filteredSorted.map(s => {
+          {paged.map(s => {
             const poster = s.poster_url;
             const fav = favSet.has(s.id);
             const genres = (s.genres || []).slice(0,2);
@@ -116,8 +126,15 @@ export default function Series() {
                     <div className="media-thumb-fallback">
                       {(s.title || '?').charAt(0).toUpperCase()}
                     </div>
-                  )}
-                  <div className="rating-pill">
+                  })}
+                </div>
+                {filteredSorted.length > pageSize && (
+                  <div className="pager">
+                    <button className="pager-btn" disabled={page<=1} onClick={()=>setPage(Math.max(1,page-1))}>Prev</button>
+                    <span className="pager-info">Page {page} / {totalPages}</span>
+                    <button className="pager-btn" disabled={page>=totalPages} onClick={()=>setPage(Math.min(totalPages,page+1))}>Next</button>
+                  </div>
+                )}
                     <span>⭐{(s.rating ?? 0).toFixed(1)}</span>/10
                   </div>
                 </div>
