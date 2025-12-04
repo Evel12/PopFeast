@@ -50,7 +50,6 @@ app.get('/api/meta/genres', async (_req,res)=>{
 });
 
 app.get('/api/movies', async (_req, res) => {
-  res.setHeader('Cache-Control','no-store');
   if (MOCK_MODE) return res.json(mockData.movies);
   const { data, error } = await supabase
     .from('movies')
@@ -102,7 +101,6 @@ app.delete('/api/movies/:id', async (req,res)=>{
 });
 
 app.get('/api/series', async (_req, res) => {
-  res.setHeader('Cache-Control','no-store');
   if (MOCK_MODE) return res.json(mockData.series);
   const { data, error } = await supabase
     .from('series')
@@ -166,14 +164,26 @@ app.post('/api/movies/:id/comments', async (req,res)=>{
   const { rating, content, username } = req.body;
   if(rating==null || content==null) return res.status(400).json({error:'rating & content required'});
   if (MOCK_MODE) {
-    const c = { id:'c'+Date.now(), item_id:req.params.id, item_type:'movie', rating:Number(rating), content:String(content), created_at:new Date().toISOString(), username: username ? String(username).slice(0,40) : null };
+    const c = { id:'c'+Date.now(), item_id:req.params.id, item_type:'movie', rating:Number(rating), content:String(content), created_at:new Date().toISOString() };
     mockData.comments.push(c);
+    // recompute rating
+    const avg = mockData.comments.filter(x=>x.item_type==='movie' && x.item_id===req.params.id).reduce((a,x)=>a+x.rating,0)/mockData.comments.filter(x=>x.item_type==='movie' && x.item_id===req.params.id).length;
+    mockData.movies = mockData.movies.map(m=> m.id===req.params.id ? {...m, rating: Number(avg.toFixed(1))}: m);
     return res.json(c);
   }
   const insert = await supabase.from('comments').insert({
     item_id:req.params.id,item_type:'movie',rating:Number(rating),content:String(content),user_id:null,username: username ? String(username).slice(0,40) : null
   }).select().single();
   if(insert.error) return res.status(500).json({error:insert.error.message});
+  // recompute avg rating
+  const avgQ = await supabase.from('comments').select('rating').eq('item_id',req.params.id).eq('item_type','movie');
+  if(!avgQ.error){
+    const ratings = (avgQ.data||[]).map(r=>r.rating).filter(r=>typeof r==='number');
+    if (ratings.length){
+      const avg = ratings.reduce((a,v)=>a+v,0)/ratings.length;
+      await supabase.from('movies').update({rating: Number(avg.toFixed(1))}).eq('id',req.params.id);
+    }
+  }
   res.json(insert.data);
 });
 app.get('/api/series/:id/comments', async (req,res)=>{
@@ -189,14 +199,24 @@ app.post('/api/series/:id/comments', async (req,res)=>{
   const { rating, content, username } = req.body;
   if(rating==null || content==null) return res.status(400).json({error:'rating & content required'});
   if (MOCK_MODE) {
-    const c = { id:'c'+Date.now(), item_id:req.params.id, item_type:'series', rating:Number(rating), content:String(content), created_at:new Date().toISOString(), username: username ? String(username).slice(0,40) : null };
+    const c = { id:'c'+Date.now(), item_id:req.params.id, item_type:'series', rating:Number(rating), content:String(content), created_at:new Date().toISOString() };
     mockData.comments.push(c);
+    const avg = mockData.comments.filter(x=>x.item_type==='series' && x.item_id===req.params.id).reduce((a,x)=>a+x.rating,0)/mockData.comments.filter(x=>x.item_type==='series' && x.item_id===req.params.id).length;
+    mockData.series = mockData.series.map(s=> s.id===req.params.id ? {...s, rating: Number(avg.toFixed(1))}: s);
     return res.json(c);
   }
   const insert = await supabase.from('comments').insert({
     item_id:req.params.id,item_type:'series',rating:Number(rating),content:String(content),user_id:null,username: username ? String(username).slice(0,40) : null
   }).select().single();
   if(insert.error) return res.status(500).json({error:insert.error.message});
+  const avgQ = await supabase.from('comments').select('rating').eq('item_id',req.params.id).eq('item_type','series');
+  if(!avgQ.error){
+    const ratings = (avgQ.data||[]).map(r=>r.rating).filter(r=>typeof r==='number');
+    if (ratings.length){
+      const avg = ratings.reduce((a,v)=>a+v,0)/ratings.length;
+      await supabase.from('series').update({rating: Number(avg.toFixed(1))}).eq('id',req.params.id);
+    }
+  }
   res.json(insert.data);
 });
 
