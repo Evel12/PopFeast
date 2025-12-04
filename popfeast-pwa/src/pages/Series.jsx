@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useFetchList } from '../hooks/useFetchList.js';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
 import { useSearchSort } from '../utils/search.jsx';
-import { getFixedRating, primeFixedRatings } from '../utils/ratings.js';
 
 export default function Series() {
   const { data, loading, error } = useFetchList('series');
@@ -18,10 +17,6 @@ export default function Series() {
       setFavSet(set);
     };
     loadFavs();
-    // Prime fixed ratings cache for list items
-    if (Array.isArray(data) && data.length) {
-      primeFixedRatings('series', data);
-    }
   }, [data]);
 
   const filteredSorted = useMemo(() => {
@@ -123,7 +118,7 @@ export default function Series() {
                     </div>
                   )}
                   <div className="rating-pill">
-                    <span>⭐{getFixedRating('series', s.id, s.rating).toFixed(1)}</span>/10
+                    <span>⭐{(s.rating ?? 0).toFixed(1)}</span>/10
                   </div>
                 </div>
                 <div className="media-body">

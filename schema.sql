@@ -98,12 +98,7 @@ select id,'series',9.5,'Character depth','Guest' from public.series limit 1;
 insert into public.favorites (item_id,item_type)
 select id,'movie' from public.movies limit 1;
 
--- Manual rating normalization (no function triggers):
-update public.movies m set rating = sub.avg_rating from (
-  select item_id, round(avg(rating)::numeric,1) avg_rating from public.comments where item_type='movie' group by item_id
-) sub where m.id = sub.item_id;
-update public.series s set rating = sub.avg_rating from (
-  select item_id, round(avg(rating)::numeric,1) avg_rating from public.comments where item_type='series' group by item_id
-) sub where s.id = sub.item_id;
+-- Ratings are authoritative fields and must NOT be auto-derived from comments.
+-- If you previously normalized ratings from comments, stop doing so to keep ratings fixed.
 
 -- DONE: Only required tables now exist.

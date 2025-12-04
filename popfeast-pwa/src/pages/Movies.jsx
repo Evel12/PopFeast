@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useFetchList } from '../hooks/useFetchList.js';
 import { getFavorites, toggleFavorite } from '../utils/favorites.js';
 import { useSearchSort } from '../utils/search.jsx';
-import { getFixedRating, primeFixedRatings } from '../utils/ratings.js';
 
 export default function Movies() {
   const { data, loading, error } = useFetchList('movies');
@@ -19,10 +18,6 @@ export default function Movies() {
       setFavSet(set);
     };
     loadFavs();
-    // Prime fixed ratings cache for list items
-    if (Array.isArray(data) && data.length) {
-      primeFixedRatings('movie', data);
-    }
   }, [data]);
 
   const filteredSorted = useMemo(() => {
@@ -125,7 +120,7 @@ export default function Movies() {
                     </div>
                   )}
                   <div className="rating-pill">
-                    <span>⭐{getFixedRating('movie', m.id, m.rating).toFixed(1)}</span>/10
+                    <span>⭐{(m.rating ?? 0).toFixed(1)}</span>/10
                   </div>
                 </div>
                 <div className="media-body">
