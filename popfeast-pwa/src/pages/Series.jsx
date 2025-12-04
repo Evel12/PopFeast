@@ -168,15 +168,8 @@ export default function Series() {
                     <div className="media-thumb-fallback">
                       {(s.title || '?').charAt(0).toUpperCase()}
                     </div>
-                  })}
-                </div>
-                {filteredSorted.length > pageSize && (
-                  <div className="pager">
-                    <button className="pager-btn" disabled={page<=1} onClick={()=>setPage(Math.max(1,page-1))}>Prev</button>
-                    <span className="pager-info">Page {page} / {totalPages}</span>
-                    <button className="pager-btn" disabled={page>=totalPages} onClick={()=>setPage(Math.min(totalPages,page+1))}>Next</button>
-                  </div>
-                )}
+                  )}
+                  <div className="rating-pill">
                     <span>⭐{(s.rating ?? 0).toFixed(1)}</span>/10
                   </div>
                 </div>
@@ -193,6 +186,13 @@ export default function Series() {
             );
           })}
         </div>
+        {filteredSorted.length > pageSize && (
+          <div className="pager">
+            <button className="pager-btn" disabled={page<=1} onClick={()=>setPage(Math.max(1,page-1))}>Prev</button>
+            <span className="pager-info">Page {page} / {totalPages}</span>
+            <button className="pager-btn" disabled={page>=totalPages} onClick={()=>setPage(Math.min(totalPages,page+1))}>Next</button>
+          </div>
+        )}
       )}
     </section>
   );
