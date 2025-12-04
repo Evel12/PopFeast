@@ -5,7 +5,7 @@ export default function Admin() {
   const [movies, setMovies] = useState([]);
   const [series, setSeries] = useState([]);
   const [tab, setTab] = useState('movies'); // 'movies' | 'series'
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(4);
   const [moviePage, setMoviePage] = useState(1);
   const [seriesPage, setSeriesPage] = useState(1);
   const [allGenres, setAllGenres] = useState([]);
@@ -293,7 +293,7 @@ export default function Admin() {
           <div>
             <label className="form-field">Page Size
               <select className="form-input" value={pageSize} onChange={onPageSizeChange}>
-                {[8,10,12,16,20,24].map(n=> <option key={n} value={n}>{n}</option>)}
+                {[4,8,12,16,20,24].map(n=> <option key={n} value={n}>{n}</option>)}
               </select>
             </label>
           </div>
@@ -338,22 +338,31 @@ export default function Admin() {
         <div className="list-panel">
           <h4>Daftar Movie</h4>
           {loadingMovies && <p className="muted">Memuat movies...</p>}
-          <div className="list-stack">
+          <div className="media-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))'}}>
             {moviePaged.map(m=>{
-              const genresDisplay = (m.genres||[]).length? (m.genres||[]).join(', '):'No Genres';
+              const genresTop = (m.genres||[]).slice(0,2);
               return (
-                <div key={m.id} className="list-item">
-                  <div className="list-item-header">
-                    <strong>{m.title}</strong>
-                    <div className="list-item-actions">
+                <div key={m.id} className="media-card" style={{position:'relative'}}>
+                  <div className="media-thumb" style={{minHeight:260}}>
+                    {m.poster_url ? (
+                      <img src={m.poster_url} alt={m.title} loading="lazy" />
+                    ) : (
+                      <div className="media-thumb-fallback">{(m.title||'?').charAt(0).toUpperCase()}</div>
+                    )}
+                    <div className="rating-pill"><span>⭐{(m.rating??0).toFixed(1)}</span>/10</div>
+                  </div>
+                  <div className="media-body">
+                    <h3 className="card-title" title={m.title}>{m.title}</h3>
+                    <div className="card-meta">
+                      {m.year && <div className="meta-chip">{m.year}</div>}
+                      {m.duration_minutes && <div className="meta-chip">{m.duration_minutes} min</div>}
+                      {genresTop.map(g=> <div key={g} className="meta-chip">{g}</div>)}
+                    </div>
+                    <div className="list-item-actions" style={{marginTop:8}}>
                       <button className="btn-mini" onClick={()=>beginEditMovie(m)}>Edit</button>
                       <button className="btn-mini danger" onClick={()=>deleteMovie(m.id)}>Hapus</button>
                     </div>
                   </div>
-                  <div className="list-item-meta">
-                    {m.year || '—'} • {genresDisplay} • {m.duration_minutes? `${m.duration_minutes} min`:'No Durasi'} • {m.rating ?? 'NR'}
-                  </div>
-                  {m.poster_url && <div className="list-url">{m.poster_url}</div>}
                 </div>
               );
             })}
@@ -404,22 +413,31 @@ export default function Admin() {
         <div className="list-panel">
           <h4>Daftar Series</h4>
           {loadingSeries && <p className="muted">Memuat series...</p>}
-          <div className="list-stack">
+          <div className="media-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))'}}>
             {seriesPaged.map(s=>{
-              const genresDisplay = (s.genres||[]).length? (s.genres||[]).join(', '):'No Genres';
+              const genresTop = (s.genres||[]).slice(0,2);
               return (
-                <div key={s.id} className="list-item">
-                  <div className="list-item-header">
-                    <strong>{s.title}</strong>
-                    <div className="list-item-actions">
+                <div key={s.id} className="media-card" style={{position:'relative'}}>
+                  <div className="media-thumb" style={{minHeight:260}}>
+                    {s.poster_url ? (
+                      <img src={s.poster_url} alt={s.title} loading="lazy" />
+                    ) : (
+                      <div className="media-thumb-fallback">{(s.title||'?').charAt(0).toUpperCase()}</div>
+                    )}
+                    <div className="rating-pill"><span>⭐{(s.rating??0).toFixed(1)}</span>/10</div>
+                  </div>
+                  <div className="media-body">
+                    <h3 className="card-title" title={s.title}>{s.title}</h3>
+                    <div className="card-meta">
+                      {typeof s.seasons==='number' && <div className="meta-chip">{s.seasons} seasons</div>}
+                      {typeof s.episodes==='number' && <div className="meta-chip">{s.episodes} eps</div>}
+                      {genresTop.map(g=> <div key={g} className="meta-chip">{g}</div>)}
+                    </div>
+                    <div className="list-item-actions" style={{marginTop:8}}>
                       <button className="btn-mini" onClick={()=>beginEditSeries(s)}>Edit</button>
                       <button className="btn-mini danger" onClick={()=>deleteSeries(s.id)}>Hapus</button>
                     </div>
                   </div>
-                  <div className="list-item-meta">
-                    {s.seasons? `${s.seasons} seasons`:'—'} • {s.episodes? `${s.episodes} eps`:'—'} • {genresDisplay} • {s.rating ?? 'NR'}
-                  </div>
-                  {s.poster_url && <div className="list-url">{s.poster_url}</div>}
                 </div>
               );
             })}
